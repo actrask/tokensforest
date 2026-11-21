@@ -12,18 +12,23 @@
 //                once sends it with each photo and skips both daily limits
 
 const PROMPT =
-  'Turn this frame into a cinematic, photoreal film still, as if shot on location with an ARRI Alexa and a 35mm anamorphic lens. ' +
-  'Keep the exact same framing, camera angle, lens and composition, the same characters in the same poses and positions, and every prop in place; ' +
-  'only relight and rebuild everything as real, life-size physical objects. ' +
-  'Keep the same place: if the frame is indoors, inside a room or the hollow of a tree, it stays indoors with the same walls, shelves, bed and furniture; ' +
-  'never move the scene outdoors, to water, or to any other location, and never add vehicles, boats or new furniture. ' +
-  'Light it cinematically but true to the scene: indoors or at night, the warm light comes from the lanterns, candles and fires that are in the frame, ' +
-  'with soft falloff into shadow; outdoors in daylight, natural sun through the trees with gentle haze and light shafts, matching the time of day and weather given. ' +
-  'Outdoors, the giant trees are towering ancient redwood trunks with deeply furrowed bark; indoors, carved wood walls show real grain. ' +
-  'Blankets and bedding are dense, thick wool that catches warm rim light. ' +
-  'Each character is life-size and handcrafted, not a toy or miniature: keep its exact silhouette, design, proportions, colors and face, in real materials. ' +
-  'Shallow depth of field, rich natural color grading, high dynamic range. ' +
-  'Absolutely no outlines, ink lines, crosshatching, illustration, cartoon, clay or miniature look. ' +
+  'Reimagine this frame as a single still from a major live-action motion picture, lit and shot by a world-class cinematographer ' +
+  'in the vein of Roger Deakins or Emmanuel Lubezki, on an ARRI Alexa 65 with vintage anamorphic lenses. ' +
+  'Keep the same place, the same characters with their exact designs and what they are doing, and the key props that tell the story ' +
+  '(shelter, fire, lantern, workbench, bed). Keep the general viewpoint and the characters\' poses, but recompose the way a cinematographer would: ' +
+  'a lower camera near the character\'s eye level, a longer lens that compresses the background, the character clearly the subject, ' +
+  'and minor clutter simplified or left out so the frame reads cleanly. ' +
+  'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
+  'and never add vehicles, boats or new furniture. ' +
+  'Light: dramatic, motivated and high-contrast. Outdoors by day, a low raking sun behind the scene, strong warm rim light, volumetric god rays ' +
+  'through haze and drifting dust, a soft anamorphic flare, deep rich shadows. At night or indoors, warm firelight, lantern and candle light ' +
+  'pooling against deep darkness with painterly falloff. Match the time of day and weather given. ' +
+  'Depth: very shallow depth of field, soft out-of-focus foreground grass or ferns framing the shot, the background melting into haze and bokeh. ' +
+  'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with moss, needles and debris, ' +
+  'never clean sand, never evenly scattered decorative leaves. Blankets and bedding are dense, thick wool that catches warm rim light. ' +
+  'Characters are life-size and handcrafted, never toys or miniatures, in real materials. ' +
+  'Grade: rich filmic color, warm highlights and cool shadows, fine 35mm grain, subtle halation, high dynamic range. ' +
+  'Never flat, evenly lit, over-detailed, video-game, CG, clay or miniature looking; no outlines, ink lines or crosshatching. ' +
   'Do not add any people, creatures, robots or characters that are not already in the frame, and do not remove any that are.';
 
 // art notes per character, applied whenever they could be in the frame
