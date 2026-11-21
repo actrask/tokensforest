@@ -125,7 +125,10 @@
   body.cine .bars{height:11vh}
   body.cine #needs,body.cine #mini,body.cine #clock,body.cine #btns{opacity:0;pointer-events:none}
   #needs,#mini,#clock,#btns{transition:opacity .6s}
-  #menuBtn{display:none}
+  #menuBtn{display:block;position:fixed;right:14px;bottom:16px;z-index:6;padding:9px 16px;transition:opacity .6s,background 2s,color 2s}
+  #btns{display:none;bottom:66px}
+  body.menu #btns{display:flex}
+  body.cine #menuBtn{opacity:0;pointer-events:none}
   @media (max-width:640px){
     #needs{top:8px;padding:6px 6px;gap:0}
     .need{min-width:0;padding:0 5px;flex:1}
@@ -5353,7 +5356,52 @@ function dirSubject(){
   DIR.pad = Math.max(0.3, hs*0.95); // what they're touching or leaning into is part of the shot, not a blocker
   const headR = WHO === 'gage' ? hs*0.55 : hs*0.56; let prop = null;   // his own head, and whatever he is holding up, can block a lens as surely as a tree can
   { const P = CH[WHO].props || {}, pm = (P.NotebookOpen && P.NotebookOpen.visible && P.NotebookOpen) || (P.Slate && P.Slate.visible && P.Slate) || (h && h.mesh && h.mesh.visible && h.mesh); if (pm){ _db.setFromObject(pm); if (!_db.isEmpty()){ const c = _db.getCenter(new THREE.Vector3()); prop = {c, r:Math.min(0.3, _db.getSize(_dv).length()*0.5)}; } } }
-  return {gy, head, hs, Hc, f, left, body, hip, hand, other, face, vis, strict, headR, prop, yaw:tok.yaw, walk:!!tok.walking};
+  let lie = null;   // asleep outdoors he is lying down: "in front of him" is straight up, so the shots need his real long axis (feet to head) instead of the way his body is turned
+  if (tok.pose === 'sleep' && !isInside(tok.x, tok.z)){ const ft = new THREE.Vector3(); let n = 0; for (const k of ['LegL', 'LegR', 'ShinL', 'ShinR']) if (parts[k]){ _db.setFromObject(parts[k]); if (!_db.isEmpty()){ ft.add(_db.getCenter(new THREE.Vector3())); n++; } }
+    if (n){ ft.multiplyScalar(1/n); const ax = new THREE.Vector3(head.x - ft.x, 0, head.z - ft.z), L = ax.length(); if (L > 0.05){ ax.multiplyScalar(1/L); const mid = head.clone().add(ft).multiplyScalar(0.5); const fn = new THREE.Vector3(0, 1, 0); if (parts.Head) parts.Head.getWorldDirection(fn); lie = {ax, L:L + hs, feet:ft, mid, side:new THREE.Vector3(ax.z, 0, -ax.x), fn}; } } }
+  return {gy, head, hs, Hc, f, left, body, hip, hand, other, face, vis, strict, headR, prop, lie, yaw:tok.yaw, walk:!!tok.walking};
+}
+/* ---- nothing parked in front of the lens: a frame is thrown out when props or plants much nearer than he is fill a real part of it (the bedroll at the bottom of the picture, a post down the middle). Fifteen sight lines across the frame; whatever they meet in the first third of the way to him counts against the shot. ---- */
+function fgClear(pos, aim, fov, focus, occ, frac = 0.34, lim = 2, spread = 1){
+  const fw = _fgF.subVectors(aim, pos); const fl = fw.length(); if (fl < 0.05) return true; fw.multiplyScalar(1/fl);
+  const rt = _fgR.crossVectors(fw, _fgU.set(0, 1, 0)); if (rt.lengthSq() < 1e-5) rt.set(1, 0, 0); rt.normalize(); const up = _fgU.crossVectors(rt, fw).normalize();
+  const tv = tanV(fov), th = tv*camera.aspect, near = Math.max(0.25, pos.distanceTo(focus)*frac); let bad = 0;
+  for (const y of [-0.62, 0, 0.62]) for (const x of [-0.7, -0.35, 0, 0.35, 0.7]){ _fgD.copy(fw).addScaledVector(rt, x*th*spread).addScaledVector(up, y*tv*spread).normalize(); _drc.set(pos, _fgD); _drc.near = 0.02; _drc.far = near; if (_drc.intersectObjects(occ, false).length) bad++; }
+  return bad <= lim; }
+const _fgF = new THREE.Vector3(), _fgR = new THREE.Vector3(), _fgU = new THREE.Vector3(), _fgD = new THREE.Vector3();
+function fgShot(sh, S, occ){ if (/^(low|top|feet|sea-|sun-|room-)/.test(sh.kind || '')) return true; let fr; try { fr = sh.frame(S, 0); } catch (e) { return true; } return !fr || !fr.pos || fgClear(fr.pos, fr.aim, sh.fov, fr.focus || S.head, occ); }
+/* ---- asleep outdoors (Gage on his bedroll): his own set of shots, each one built from where his head and feet really are and kept only if the lens can see his face and his body with nothing in front of it.
+   Anderson: the camp squared up side-on, level, him small and centered under the tarp. Gallo: a long, still overhead, and a far, quiet wide with the night around him. And one close on the sleeping face from above his chest. ---- */
+function bedShot(S, now){
+  const occ = dirOccluders(now), P = performance.now()/1000, L = S.lie, face = S.face || S.head, base = {start:P, walk:false, side:DIR.side, still:true};
+  const sees = C => dirRoomy(C, occ) && dirSees(C, face, occ, 0.12) && dirSees(C, L.mid, occ, 0.3);
+  const toward = C => _fgD.subVectors(C, face).normalize().dot(L.fn);   // > 0: the lens is on the side his face is turned to
+  const good = (C, aim, fov, min = 0.1) => toward(C) > min && sees(C) && fgClear(C, aim, fov, face, occ, 0.6, 2);
+  const tight = (C, aim, fov) => toward(C) > 0.3 && sees(C) && dirSees(C, S.head, occ, 0.12) && fgClear(C, aim, fov, face, occ, 0.8, 1, 0.5);
+  const order = ['bed-wide', 'bed-face', 'bed-over', 'bed-far']; DIR.bedN = (DIR.bedN || 0) + 1;
+  for (let k = 0; k < order.length; k++){ const kind = order[(DIR.bedN + k) % order.length];
+    if (kind === 'bed-wide'){ const fov = 28, d = fitD(fov, L.L*1.5, L.L*2.3);   // side-on to him and level with the ground he lies on, raised just enough to look over the bedding
+      for (const sg of [DIR.side, -DIR.side]) for (const h of [0.75, 1.1, 1.5]){ const C = L.mid.clone().addScaledVector(L.side, sg*d); C.y = Math.max(S.gy, G(C.x, C.z)) + h; const aim = new THREE.Vector3(L.mid.x, S.gy + 0.28, L.mid.z);
+        if (good(C, aim, fov)){ DIR.last = kind; return {...base, kind, fov, dur:RND(10, 13), frame:() => ({pos:C.clone(), aim:aim.clone(), focus:face})}; } } }
+    if (kind === 'bed-face'){ const fov = 26, d = fitD(fov, S.hs*3.4);   // close on the sleeping face, from above his chest looking up the bed, so the face sits upright in the frame
+      const cand = []; for (const el of [0.35, 0.6, 0.9, 1.2]) for (let i = 0; i < 12; i++) cand.push([el, i*Math.PI/6]);   // every way round his head at four heights, best first: squarest onto his face
+      const at = ([el, a]) => { const hz = Math.cos(el)*d, C = face.clone().add(new THREE.Vector3(Math.sin(a)*hz, 0, Math.cos(a)*hz)); C.y = face.y + Math.sin(el)*d; return C; };
+      cand.sort((p, q) => toward(at(q)) - toward(at(p)));
+      for (const cd of cand){ const C = at(cd), aim = face.clone();
+        if (tight(C, aim, fov)){ DIR.last = kind; return {...base, kind, fov, dur:RND(7, 9), frame:(S2) => ({pos:C.clone(), aim:(S2.face || S2.head).clone(), focus:S2.face || S2.head})}; } } }
+    if (kind === 'bed-over'){ const fov = 30, d = fitD(fov, L.L*1.9, L.L*1.9);   // straight down on the whole bed, his head to the top of the frame, perfectly still
+      for (const h of [1, 0.75]){ const C = L.mid.clone(); C.y = S.gy + 0.2 + d*h; const aim = new THREE.Vector3(L.mid.x, S.gy + 0.15, L.mid.z);
+        if (sees(C) && fgClear(C, aim, fov, face, occ, 0.86, 1, 0.7)){ DIR.last = kind; const up = L.ax.clone(); return {...base, kind, fov, dur:RND(9, 12), frame:() => ({pos:C.clone(), aim:aim.clone(), up, focus:face})}; } } }
+    if (kind === 'bed-far'){ const fov = 22, d = fitD(fov, L.L*3.4, L.L*5);   // far off and low, a long lens: the whole camp with him small in it, held a long time
+      for (const a of [0.5, -0.5, 1.0, -1.0, 0.15, -0.15, 1.45, -1.45]){ const dir = L.side.clone().multiplyScalar(Math.cos(a)*DIR.side).addScaledVector(L.ax, -Math.sin(Math.abs(a))), C = L.mid.clone().addScaledVector(dir, d); C.y = Math.max(S.gy, G(C.x, C.z)) + 1.25;
+        const aim = new THREE.Vector3(L.mid.x, S.gy + 0.5, L.mid.z).addScaledVector(L.side, -DIR.side*L.L*0.55);
+        if (good(C, aim, fov)){ DIR.last = kind; return {...base, kind, fov, dur:RND(12, 16), frame:() => ({pos:C.clone(), aim:aim.clone(), focus:face})}; } } }
+  }
+  // nothing clean from the set positions: walk a ring round him, looking down at him, until his face is in the clear
+  { const fov = 28, d = fitD(fov, L.L*1.7, L.L*2.2); for (const el of [0.7, 1.0, 0.45]) for (let i = 0; i < 12; i++){ const a = i*Math.PI/6, hz = Math.cos(el)*d, C = L.mid.clone().add(new THREE.Vector3(Math.sin(a)*hz, 0, Math.cos(a)*hz)); C.y = S.gy + 0.2 + Math.sin(el)*d; const aim = L.mid.clone();
+      if (sees(C)){ DIR.last = 'bed-wide'; return {...base, kind:'bed-wide', fov, dur:10, frame:() => ({pos:C.clone(), aim:aim.clone(), focus:face})}; } } }
+  const fov = 28, d = fitD(fov, L.L*1.7, L.L*2.2), C = L.mid.clone().addScaledVector(L.side, DIR.side*d*0.7); C.y = S.gy + 0.2 + d*0.7; DIR.last = 'bed-wide';
+  return {...base, kind:'bed-wide', fov, dur:10, frame:() => ({pos:C.clone(), aim:L.mid.clone(), focus:face})};
 }
 const segGap = (a, b, q) => { const ab = _dv.subVectors(b, a), t = Math.max(0, Math.min(1, _dv2.subVectors(q, a).dot(ab)/Math.max(1e-6, ab.lengthSq()))); return _dv2.copy(a).addScaledVector(ab, t).distanceTo(q); };
 const handOpen = (C, S) => !S.hand || segGap(C, S.hand, S.head) > S.headR*1.02;   // a shot of the hands must not look through his head
@@ -5464,6 +5512,23 @@ function buildShot(kind, S, side, occ){
     return {...base, fov, dur:RND(7, 10), follow:true, frame:(S) => { const pos = atAng(S, S.yaw + a, d, S.head.y - S.Hc*0.1); pos.y = Math.max(pos.y, G(pos.x, pos.z) + 0.3);
       return {pos, aim:new THREE.Vector3(tok.x, S.gy + S.Hc*0.55, tok.z), focus:S.head}; }};
   }
+  if (kind === 'still'){ // Gallo: far back, locked off, level; he is small and off to one side with the place around him, and the shot is simply held
+    const fov = 23, d = fitD(fov, S.Hc*4.6, S.Hc*7.5), ang = S.yaw + side*RND(0.1, 0.4), C = atAng(S, ang, d, 0); C.y = Math.max(G(C.x, C.z), S.gy) + S.Hc*0.55;
+    if (!ok(C, [S.head, S.body, S.hip])) return null;
+    const rx = Math.cos(ang), rz = -Math.sin(ang), off = d*tanV(fov)*camera.aspect*0.36*side, aim = new THREE.Vector3(tok.x + rx*off, S.gy + S.Hc*0.62, tok.z + rz*off);
+    return {...base, fov, dur:RND(12, 16), still:true, frame:() => ({pos:C.clone(), aim:aim.clone(), focus:S.head})};
+  }
+  if (kind === 'hero'){ // Spike Lee: low and close in front of him on a wide lens, looking up, the horizon tipped a few degrees
+    const fov = 44, d = fitD(fov, S.Hc*1.5, S.Hc*1.3), ang = S.yaw + side*RND(0.1, 0.3), C = atAng(S, ang, d, 0); C.y = Math.max(G(C.x, C.z) + 0.16, S.gy + S.Hc*0.2);
+    if (C.y > S.head.y - S.Hc*0.3 || !ok(C, [S.head, S.body])) return null;
+    const roll = side*RND(0.05, 0.085), rt = new THREE.Vector3(Math.cos(ang), 0, -Math.sin(ang)), up = new THREE.Vector3(0, Math.cos(roll), 0).addScaledVector(rt, Math.sin(roll));
+    return {...base, fov, dur:RND(5, 7), still:true, frame:(S) => ({pos:C.clone(), aim:new THREE.Vector3(tok.x, S.gy + S.Hc*0.62, tok.z), up, focus:S.head})};
+  }
+  if (kind === 'dolly'){ // Spike Lee's double dolly: the camera rides dead ahead of him at one fixed distance, so he holds still in the frame and the forest slides past behind
+    const fov = 36, d = fitD(fov, S.Hc*1.5, S.Hc*1.2), at = () => { const p = atAng(S, tok.yaw, d, 0); p.y = Math.max(G(p.x, p.z) + 0.3, G(tok.x, tok.z) + S.Hc*0.55); return p; };
+    const C = at(); if (!ok(C, [S.head, S.body])) return null;
+    return {...base, fov, dur:RND(6, 9), frame:() => ({pos:at(), aim:new THREE.Vector3(tok.x, G(tok.x, tok.z) + S.Hc*0.6, tok.z), focus:S.head})};
+  }
   if (kind === 'profile'){ // long-lens lateral track
     const fov = 21, d = fitD(fov, S.Hc*2.1, S.Hc*3.2), a = side*RND(1.3, 1.5);
     const C = atAng(S, S.yaw + a, d, S.gy + S.Hc*0.6);
@@ -5513,11 +5578,12 @@ function pickShot(S, now){
   if (sunsetVigil()) return sunsetShot(S);
   if (atCliff()) return sunsetShot(S, true);   // at the edge by day (or any hour): stay behind him, looking out over the water with him
   if (tokInRoom()) return roomShot(S, now);
+  if (S.lie) return bedShot(S, now);
   const occ = dirOccluders(now);
   let W;
-  if (S.walk) W = {lead:3, profile:2, pan:2.5, feet:1.1};
+  if (S.walk) W = {lead:2.2, dolly:1.8, profile:2, pan:2.5, feet:1.1};
   if (S.walk && DIR.want){ W = {[DIR.want]:6, lead:1, profile:1, pan:1}; DIR.want = null; }   // a walk told in cuts: each piece of it asks for its own kind of shot
-  else W = {tableau:3, cu:2.2, flat:2, top:S.hand ? 3.4 : 0, insert:S.hand ? 2 : 0, push:1.2, close:0.6, estab:0.4, low:0.25, two:S.other ? 1.6 : 0};
+  else W = {tableau:3, cu:2.2, flat:2, still:1.5, top:S.hand ? 3.4 : 0, insert:S.hand ? 2 : 0, push:1.2, hero:0.55, close:0.6, estab:0.4, low:0.25, two:S.other ? 1.6 : 0};
   if (!S.walk && DIR.lastWalk !== false && !(RP.on && RP.narr)) W = {tableau:2, estab:0.6}; // arriving: a squared-up tableau of where we are
   if (!S.walk && RP.on && RP.narr){ // under the narrator: show the thing he is talking about. A wide to place it, then straight into the hands and the face (Leone by way of Tarantino: very wide, then very close)
     W = DIR.narrN === 0 ? {tableau:2, flat:1.5, estab:1} : S.hand ? {insert:3.2, top:2.6, low:1.4, cu:1.6, close:1, flat:0.8} : {cu:2.4, close:1.6, flat:1.4, push:1.2, low:0.8, tableau:0.6};
@@ -5532,7 +5598,7 @@ function pickShot(S, now){
     let r = Math.random()*tot, kind = 'push'; for (const k in W){ r -= W[k]; if (r <= 0){ kind = k; break; } }
     const side = tries % 3 === 2 ? -DIR.side : DIR.side;
     const sh = buildShot(kind, S, side, occ);
-    if (sh && shotClear(sh, S, occ)){ DIR.side = side; DIR.last = kind; DIR.n++; return sh; }
+    if (sh && shotClear(sh, S, occ) && fgShot(sh, S, occ)){ DIR.side = side; DIR.last = kind; DIR.n++; return sh; }
     if (tries % 3 === 2) W[kind] *= 0.4;
   }
   // nothing clean: a high wide from the front
@@ -5542,7 +5608,7 @@ function pickShot(S, now){
   DIR.last = 'estab';
   return {kind:'estab', side:DIR.side, start:performance.now()/1000, walk:S.walk, fov, dur:7, frame:(S) => ({pos:C.clone(), aim:new THREE.Vector3(tok.x, S.gy + S.Hc*0.5, tok.z), focus:S.head})};
 }
-const CAM_ORDER = {still:['tableau', 'cu', 'flat', 'top', 'insert', 'push', 'estab', 'close', 'low', 'god', 'two'], walk:['lead', 'profile', 'pan', 'feet']};
+const CAM_ORDER = {still:['tableau', 'cu', 'flat', 'still', 'top', 'insert', 'push', 'hero', 'estab', 'close', 'low', 'god', 'two'], walk:['lead', 'dolly', 'profile', 'pan', 'feet']};
 /* ---- inside the burrow: the same film grammar in a room two strides wide. Wide lenses, the camera kept inside the dome, and every angle checked against his own head and the furniture:
    a wide across the room, a tight close-up on the face, an insert on the hands and the page, over the shoulder at what he writes, the low angle up from the table (the trunk shot), a profile; asleep, from above the bed and close on the face ---- */
 const ROOM_NAME = {'room-wide':'Across the room', 'room-face':'Close-up', 'room-insert':'Hands', 'room-ots':'Over the shoulder', 'room-low':'From the table', 'room-profile':'Profile', 'room-bed':'Above the bed', 'room-bedface':'Close-up'};
@@ -5580,7 +5646,7 @@ function roomShot(S, now){
   const C = pull(V(TREE.x + (TREE.x - tok.x)*0.6, Y0 + 1.15, TREE.z + (TREE.z - tok.z)*0.6 + 0.4)); DIR.last = 'room-wide';   // nothing passed: the middle of the room, looking at him
   return {kind:'room-wide', side:1, start:now, walk:S.walk, fov:62, dur:7, still:!S.walk, room:true, frame:(S2) => ({pos:C.clone(), aim:mid(S2), focus:S2.head})};
 }
-const CAM_NAME = {tableau:'Tableau', cu:'Close-up (centered)', flat:'Profile', top:'Overhead insert', estab:'Wide', push:'Push-in', close:'Close-up', low:'Low angle', god:'Overhead', insert:'Hands', two:'Two-shot', lead:'Leading', profile:'Tracking', pan:'Pan'};
+const CAM_NAME = {still:'Long still', hero:'Low angle, tilted', dolly:'Double dolly', 'bed-wide':'Side-on', 'bed-face':'Close-up', 'bed-over':'Overhead', 'bed-far':'Far wide', tableau:'Tableau', cu:'Close-up (centered)', flat:'Profile', top:'Overhead insert', estab:'Wide', push:'Push-in', close:'Close-up', low:'Low angle', god:'Overhead', insert:'Hands', two:'Two-shot', lead:'Leading', profile:'Tracking', pan:'Pan'};
 const SCR = {on:false, snap:false, miss:0};
 function scrOff(){ if (SCR.hh){ SCR.hh.visible = true; SCR.hh = null; } SCR.page = false; if (NB.pageMats) for (const m of NB.pageMats) m.emissiveIntensity = 0; camera.up.set(0, 1, 0); camera.near = 0.2; camera.fov = window.__baseFov || 42; camera.updateProjectionMatrix(); try { post.uniforms.near.value = 0.2; } catch (x) {} }
 window.__SCR = SCR;
@@ -5619,6 +5685,7 @@ function nextCamera(){
     if (nbk && nbk.visible && tok.motion === 'write' && !tok.walking && (DIR.pgN = (DIR.pgN || 0) + 1) % 3 === 1){ SCR.on = true; SCR.snap = true; SCR.miss = 0; camToast('Camera: His page'); return; } }
   DIR.on = true; const now = performance.now()/1000, S = dirSubject(), occ = dirOccluders(now), list = S.walk ? CAM_ORDER.walk : CAM_ORDER.still;
   if (tokInRoom()){ const sh = roomShot(S, now); DIR.shot = sh; DIR.until = now + Math.max(sh.dur, 10); DIR.cut = true; DIR.blockT = 0; camToast('Camera: ' + (ROOM_NAME[sh.kind] || 'Inside')); return; }
+  if (S.lie){ const sh = bedShot(S, now); DIR.shot = sh; DIR.until = now + Math.max(sh.dur, 10); DIR.cut = true; DIR.blockT = 0; camToast('Camera: ' + (CAM_NAME[sh.kind] || 'Asleep')); return; }
   const i = list.indexOf(DIR.shot ? DIR.shot.kind : '');
   for (let k = 1; k <= list.length*2; k++){ const kind = list[(i + k + list.length) % list.length], side = k > list.length ? -DIR.side : DIR.side;
     const sh = buildShot(kind, S, side, occ); if (sh){ DIR.shot = sh; DIR.until = now + Math.max(sh.dur, 10); DIR.cut = true; DIR.last = kind; DIR.side = side; DIR.blockT = 0; camToast('Camera: ' + CAM_NAME[kind]); return; } }
@@ -5634,6 +5701,7 @@ function directorFrame(dt){
   let need = !DIR.shot || now > DIR.until; if (need) DIR.why = DIR.shot ? 'time' : 'none';
   if (DIR.shot && !need && now - DIR.shot.start > 1.0 && DIR.shot.walk !== S.walk){ need = true; DIR.why = 'walk'; }
   if (DIR.shot && !need && /^room-/.test(DIR.shot.kind || '') !== tokInRoom()){ need = true; DIR.why = 'door'; }
+  if (DIR.shot && !need && /^bed-/.test(DIR.shot.kind || '') !== !!S.lie){ need = true; DIR.why = 'bed'; }
   if (DIR.shot && !need && DIR.shot.kind === 'pan' && Math.hypot(camera.position.x - tok.x, camera.position.z - tok.z) > 15) need = true;
   if (DIR.shot && !need && DIR.shot.kind !== 'screen' && now > DIR.chk){ DIR.chk = now + 0.3;
     const tgt = DIR.shot.kind === 'insert' && S.hand ? S.hand : S.head;
@@ -5832,6 +5900,7 @@ function frame(){
     u.hazeDen.value = 0.85*(0.012 + 0.042*nk + 0.16*WXS.fog + 0.035*WXS.rain + 0.05*WXS.snow + 0.006*WXS.cloud); u.hazeStart.value = (10 - 5.5*nk)*(1 - 0.8*Math.max(WXS.fog, 0.5*WXS.rain, 0.6*WXS.snow));
     u.hazeCol.value.lerp(new THREE.Color(0.7, 0.73, 0.76).multiplyScalar(0.12 + 0.88*dayAmt), Math.max(WXS.fog, 0.6*WXS.rain, 0.5*WXS.cloud)*0.8); u.hazeFloor.value = G(camera.position.x, camera.position.z); u.expo.value = 1.35 + 0.12*nk*(1 - 0.85*roomAmt); }   // night exteriors are exposed up for the film cameras: moonlit, not black
   post.uniforms.dusk.value = 0;
+  if (DIR.on && DIR.shot && /^bed-/.test(DIR.shot.kind || '')) post.uniforms.expo.value *= 1 + 0.32*(1 - dayAmt);   // asleep outdoors at night there is no fire and no lamp: expose for the moonlit figure
   if (DIR.on && DIR.shot && /^sea-/.test(DIR.shot.kind || '')){ const u = post.uniforms; u.veil.value.x *= 0.22; u.hazeDen.value *= 0.3; u.expo.value *= 0.9; }   // looking out to sea by day: thin the haze so the water, the horizon and the sky read
   if (DIR.on && DIR.shot && /^sun-/.test(DIR.shot.kind || '')){ const u = post.uniforms; u.dusk.value = 1; u.veil.value.x *= 0.5; u.expo.value = /face|profile/.test(DIR.shot.kind) ? 1.14 : 1.02; u.hazeDen.value *= 0.22; u.hazeCol.value.setRGB(1.0, 0.6, 0.36).multiplyScalar(0.5); }   // sundown grade: exposed for the sky so he goes to silhouette, thin warm haze so the sea and horizon read
   { // rim + back light, opposite the camera, colored by moon or sun
