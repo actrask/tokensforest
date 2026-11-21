@@ -54,6 +54,7 @@
       .catch(function(){ window.open(photo, '_blank'); });
   };
 
+  function txt(id){ var e = document.getElementById(id); return e ? (e.textContent || '').trim().slice(0, 160) : ''; }
   function whoNow(){ var b = document.querySelector('#who button.on'); return b && b.dataset.w || ''; }
 
   var gal = el('div', {id:'prGal'}), galTitle = el('h3', {}, 'Your forest photos'), grid = el('div', {id:'prGrid'}), galBar = el('div', {id:'prGalBar'});
@@ -94,7 +95,7 @@
     grab().then(function(g){
       original = g.data; img.src = original; frame.classList.add('dev'); msg.textContent = 'Developing the photo… (about 10–20 seconds)'; msg.style.display = 'flex';
       shade.classList.add('on');
-      return fetch('/api/photoreal', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image: g.data, aspect: g.aspect, who: whoNow()})})
+      return fetch('/api/photoreal', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image: g.data, aspect: g.aspect, who: whoNow(), scene: txt('statusTxt'), clock: txt('clock')})})
         .then(function(r){ return r.json().catch(function(){ return {error:'The photo did not develop.'}; }); })
         .then(function(j){
           if (j.url && j.url.charAt(0) === '/') j.url = location.origin + j.url;

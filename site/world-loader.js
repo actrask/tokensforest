@@ -22,6 +22,6 @@
   setInterval(function(){ load().then(function(changed){ if (changed) subs.slice().forEach(function(fn){ try { fn(); } catch (e) {} }); }); }, 600000);
   window.claude = { use: function(n){ return n === 'db' ? ready : Promise.resolve(null); } };
   var st = document.createElement('style'); st.textContent = '#openNote,#exportBtn{display:none!important} #welcome .hero{display:block;margin:0 auto 10px;max-height:34vh;max-width:100%;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.25)}'; document.head.appendChild(st);
-  var pr = document.createElement('script'); pr.src = 'photoreal.js?v=4'; pr.defer = true; document.head.appendChild(pr);   // the camera button (public site only)
+  var pr = document.createElement('script'); pr.src = 'photoreal.js?v=5'; pr.defer = true; document.head.appendChild(pr);   // the camera button (public site only)
   document.addEventListener('DOMContentLoaded', function(){ var c = document.querySelector('#welcome .card'); if (!c || c.querySelector('.hero')) return; var im = new Image(); im.className = 'hero'; im.alt = "Pencil drawing of Token walking through the forest with his staff and bundle"; im.src = 'hero.jpg'; c.insertBefore(im, c.firstChild); });
 })();

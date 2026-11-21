@@ -11,13 +11,16 @@
 
 const PROMPT =
   'Turn this frame into a cinematic, photoreal film still, as if shot on location with an ARRI Alexa and a 35mm anamorphic lens. ' +
-  'Keep the exact same framing, camera angle, lens and composition, the same characters in the same poses and positions, and every prop in place; only relight and rebuild everything as real, life-size physical objects. ' +
-  'The giant trees are towering ancient redwood trunks with deeply furrowed, weathered bark, dwarfing the camp. ' +
-  'Each character is a life-size handcrafted being, not a toy or miniature: keep its exact silhouette, design, proportions, colors and face, ' +
-  'rendered in real materials such as aged brass, worn leather, cloth and wood. ' +
-  'Golden-hour sunlight low in the sky, raking through the trees with volumetric god rays and a soft lens flare, warm rim light on every edge, ' +
-  'drifting haze and dust in the air, the campfire and lantern glowing warmly. Real wet stones and moving water with natural reflections, ' +
-  'wild grass and ferns. Low camera, shallow depth of field with soft foreground bokeh, rich natural color grading, high dynamic range. ' +
+  'Keep the exact same framing, camera angle, lens and composition, the same characters in the same poses and positions, and every prop in place; ' +
+  'only relight and rebuild everything as real, life-size physical objects. ' +
+  'Keep the same place: if the frame is indoors, inside a room or the hollow of a tree, it stays indoors with the same walls, shelves, bed and furniture; ' +
+  'never move the scene outdoors, to water, or to any other location, and never add vehicles, boats or new furniture. ' +
+  'Light it cinematically but true to the scene: indoors or at night, the warm light comes from the lanterns, candles and fires that are in the frame, ' +
+  'with soft falloff into shadow; outdoors in daylight, natural sun through the trees with gentle haze and light shafts, matching the time of day and weather given. ' +
+  'Outdoors, the giant trees are towering ancient redwood trunks with deeply furrowed bark; indoors, carved wood walls show real grain. ' +
+  'Blankets and bedding are dense, thick wool that catches warm rim light. ' +
+  'Each character is life-size and handcrafted, not a toy or miniature: keep its exact silhouette, design, proportions, colors and face, in real materials. ' +
+  'Shallow depth of field, rich natural color grading, high dynamic range. ' +
   'Absolutely no outlines, ink lines, crosshatching, illustration, cartoon, clay or miniature look. ' +
   'Do not add any people, creatures, robots or characters that are not already in the frame, and do not remove any that are.';
 
@@ -28,10 +31,13 @@ const CHARACTER_NOTES =
   'with subtle pores and natural color, never brass, metal, bronze, plastic or wood. His spiky hair is real hair, not metal spikes. ' +
   'Only his goggles, buckles and tools are metal; his clothes are real cloth and leather.';
 
-function promptFor(who) {
+function clean(t) { return String(t || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160); }
+
+function promptFor(who, scene, clock) {
   const lead = who === 'gage' ? 'This frame is from Gage\'s view; Gage is the main character. ' :
                who === 'token' ? 'This frame is from Token\'s view; Token is the main character. ' : '';
-  return lead + PROMPT + ' ' + CHARACTER_NOTES;
+  const ctx = (scene ? 'What is happening: ' + clean(scene) + '. ' : '') + (clock ? 'Time and weather in the forest: ' + clean(clock) + '. ' : '');
+  return lead + ctx + PROMPT + ' ' + CHARACTER_NOTES;
 }
 
 // model choices; the page sends one of these keys (default first)
@@ -89,7 +95,7 @@ async function handle({ request, env }) {
   const r = await fetch(m.url, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(m.body(image, aspect, promptFor(body.who))),
+    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock))),
   });
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
