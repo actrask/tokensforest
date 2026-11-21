@@ -28,8 +28,10 @@ const PROMPT =
 const CHARACTER_NOTES =
   'Character notes: Gage (the tinkerer with large round brass goggles and spiky hair) is young and youthful: a fresh, smooth, boyish face with no wrinkles, ' +
   'no age lines, no sagging, bright wide eyes and soft rounded features, never old or elderly. His face, head, neck, arms and hands are real, natural, healthy young skin ' +
-  'with subtle pores and natural color, never brass, metal, bronze, plastic or wood. His spiky hair is real hair, not metal spikes. ' +
-  'Only his goggles, buckles and tools are metal; his clothes are real cloth and leather. ' +
+  'with subtle pores and natural color, never brass, metal, bronze, plastic or wood. His hair is real hair, stiff and styled into sharp, separate, pointed spikes that stand straight out all around his head, never soft, fluffy or messy, and never metal. ' +
+  'His goggle lenses are smoked, darkly tinted glass, his eyes only faintly visible behind them. ' +
+  'His shoes are carved from smooth, solid wood, like large rounded wooden clogs with visible wood grain, never bare feet, cloth or leather. ' +
+  'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ' +
   'Token is a small, gentle forest creature of his own kind, not a bear, animal, robot, alien or person: a large, perfectly round, smooth head; ' +
   'two very large teardrop-shaped eyes, each about a quarter of the width of his face, the rounded end low and the soft point rising toward the inner brow, ' +
   'glossy and dark with warm brown irises and soft highlights; when he sleeps the closed lids keep that same large teardrop outline, never small human slits; ' +
