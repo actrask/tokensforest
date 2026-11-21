@@ -18,13 +18,26 @@ const PROMPT =
   'Golden-hour sunlight low in the sky, raking through the trees with volumetric god rays and a soft lens flare, warm rim light on every edge, ' +
   'drifting haze and dust in the air, the campfire and lantern glowing warmly. Real wet stones and moving water with natural reflections, ' +
   'wild grass and ferns. Low camera, shallow depth of field with soft foreground bokeh, rich natural color grading, high dynamic range. ' +
-  'Absolutely no outlines, ink lines, crosshatching, illustration, cartoon, clay or miniature look.';
+  'Absolutely no outlines, ink lines, crosshatching, illustration, cartoon, clay or miniature look. ' +
+  'Do not add any people, creatures, robots or characters that are not already in the frame, and do not remove any that are.';
+
+// art notes per character, applied whenever they could be in the frame
+const CHARACTER_NOTES =
+  'Character notes: Gage (the tinkerer with large round brass goggles and spiky hair) is a living being with real, natural skin on his face, head, neck and hands: ' +
+  'soft, warm, slightly weathered skin with subtle pores and natural color variation, never brass, metal, bronze, plastic or wood. ' +
+  'Only his goggles, buckles and tools are metal; his clothes are real cloth and leather.';
+
+function promptFor(who) {
+  const lead = who === 'gage' ? 'This frame is from Gage\'s view; Gage is the main character. ' :
+               who === 'token' ? 'This frame is from Token\'s view; Token is the main character. ' : '';
+  return lead + PROMPT + ' ' + CHARACTER_NOTES;
+}
 
 // model choices; the page sends one of these keys (default first)
 const MODELS = {
-  kontext: { url: 'https://fal.run/fal-ai/flux-pro/kontext', body: (img, aspect) => ({ prompt: PROMPT, image_url: img, aspect_ratio: aspect, guidance_scale: 4, output_format: 'jpeg', num_images: 1, safety_tolerance: '2' }) },
-  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', body: (img, aspect) => ({ prompt: PROMPT, image_urls: [img], aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
-  seedream: { url: 'https://fal.run/fal-ai/bytedance/seedream/v4/edit', body: (img, aspect) => ({ prompt: PROMPT, image_urls: [img], image_size: 'auto_2K', num_images: 1 }) },
+  kontext: { url: 'https://fal.run/fal-ai/flux-pro/kontext', body: (img, aspect, prompt) => ({ prompt, image_url: img, aspect_ratio: aspect, guidance_scale: 4, output_format: 'jpeg', num_images: 1, safety_tolerance: '2' }) },
+  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', body: (img, aspect, prompt) => ({ prompt, image_urls: [img], aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
+  seedream: { url: 'https://fal.run/fal-ai/bytedance/seedream/v4/edit', body: (img, aspect, prompt) => ({ prompt, image_urls: [img], image_size: 'auto_2K', num_images: 1 }) },
 };
 
 const ASPECTS = ['21:9', '16:9', '4:3', '3:2', '1:1', '2:3', '3:4', '9:16', '9:21'];
@@ -75,7 +88,7 @@ async function handle({ request, env }) {
   const r = await fetch(m.url, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(m.body(image, aspect)),
+    body: JSON.stringify(m.body(image, aspect, promptFor(body.who))),
   });
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);

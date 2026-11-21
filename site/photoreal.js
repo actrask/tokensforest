@@ -41,6 +41,8 @@
       .catch(function(){ window.open(photo, '_blank'); });
   };
 
+  function whoNow(){ var b = document.querySelector('#who button.on'); return b && b.dataset.w || ''; }
+
   // grab the canvas right after the page has drawn the next frame
   function grab(){
     return new Promise(function(res){
@@ -60,7 +62,7 @@
     grab().then(function(g){
       original = g.data; img.src = original; frame.classList.add('dev'); msg.textContent = 'Developing the photo… (about 10–20 seconds)'; msg.style.display = 'flex';
       shade.classList.add('on');
-      return fetch('/api/photoreal', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image: g.data, aspect: g.aspect})})
+      return fetch('/api/photoreal', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image: g.data, aspect: g.aspect, who: whoNow()})})
         .then(function(r){ return r.json().catch(function(){ return {error:'The photo did not develop.'}; }); })
         .then(function(j){
           if (!j.url) throw new Error(j.error || 'The photo did not develop.');
