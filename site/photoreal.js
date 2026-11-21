@@ -14,7 +14,11 @@
     '#prFrame.dev img{filter:grayscale(.6) brightness(.55) blur(1.5px)}' +
     '#prMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f4ead8;font:600 15px/1.4 system-ui,sans-serif;text-align:center;padding:20px;text-shadow:0 1px 4px #000}' +
     '#prBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}' +
-    '#prBar .btn{min-width:90px}';
+    '#prBar .btn{min-width:90px}' +
+    '#photoBtn{position:fixed;right:132px;bottom:16px;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:opacity .6s}' +
+    '#photoBtn svg{width:21px;height:21px;display:block}' +
+    'body.cine #photoBtn{opacity:0;pointer-events:none}' +
+    '@media (max-width:640px){#photoBtn{right:120px;bottom:104px}}';
   document.head.appendChild(css);
 
   function el(tag, attrs, html){ var e = document.createElement(tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (html) e.innerHTML = html; return e; }
@@ -69,10 +73,14 @@
 
   function init(){
     document.body.appendChild(shade);
-    var btns = document.getElementById('btns'); if (!btns) return;
-    var b = el('button', {'class':'btn light', id:'photoBtn', 'aria-label':'Take a photoreal picture of this view'}, '📷 Photo');
-    b.addEventListener('click', shoot);
-    btns.insertBefore(b, btns.firstChild);
+    var b = el('button', {'class':'btn', id:'photoBtn', title:'Photoreal photo of this view', 'aria-label':'Take a photoreal photo of this view'},
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>');
+    b.addEventListener('click', function(e){ e.stopPropagation(); shoot(); });
+    document.body.appendChild(b);
+    // sit just left of the Menu button, whatever its width
+    function place(){ var m = document.getElementById('menuBtn'); if (!m) return; var r = m.getBoundingClientRect(); if (!r.width) return;
+      b.style.right = (window.innerWidth - r.left + 10) + 'px'; b.style.bottom = (window.innerHeight - r.bottom + (r.height - 42) / 2) + 'px'; }
+    place(); window.addEventListener('resize', place); setInterval(place, 2000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
