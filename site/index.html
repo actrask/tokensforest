@@ -4819,7 +4819,7 @@ setTimeout(() => { const b = document.createElement('button'); b.className = 'bt
       `<button class="btn" style="margin-top:14px;width:100%">Close</button>`;
     card.scrollTop = 0; readCard.style.display = 'flex'; readCard.querySelector('button').onclick = () => { readCard.style.display = 'none'; }; }; }, 1200);
 /* ---- "His map": the sheet Gage draws on, shown as he has drawn it and filling in as he adds to it. It lives in gmap.js next to this page; this hands it what it needs from here. ---- */
-window.__GM = {CREEK, EDGE, CH, readCard, esc, GHAND, get ACTIVE(){ return ACTIVE; }, get RP_T(){ return RP_T; }};
+window.__GM = {CREEK, EDGE, CH, readCard, esc, GHAND, get ACTIVE(){ return ACTIVE; }, get RP_T(){ return RP_T; }, get PLACES(){ return PLACES; }, photosOf:id => photosOf(id), openPhoto:pid => photoOpen('gage', pid)};
 { const s = document.createElement('script'); s.src = 'gmap.js'; document.head.appendChild(s); }
 /* ---- "His pictures": what he has taken with his pinhole camera. Each picture is saved as the moment the shutter was open, where the box sat and what it was pointed at; the page develops it by standing the forest still at that moment (its weather, its light, everything that was there) and looking out through the pinhole: wide, soft, brown, dark at the corners. ---- */
 const PHO = {img:{}, q:[], cur:null};
@@ -4859,6 +4859,15 @@ function photoTick(){ const c = PHO.cur; if (!c) return; if (!RP.on || !RP.photo
   const q = PHO.q; photoStop(); PHO.q = q; photoPaint(); setTimeout(photoNext, 60); }
 function photoPaint(){ if (readCard.style.display === 'none') return; readCard.querySelectorAll('.phoI').forEach(el => { const u = PHO.img[el.dataset.k]; if (!u || el.dataset.done) return; el.dataset.done = 1;
     el.innerHTML = u === 'lost' ? '<div style="padding:26px 10px;text-align:center;opacity:.7">This one did not come out.</div>' : `<img src="${u}" alt="" style="display:block;width:100%;border-radius:2px">`; }); }
+function photoOpen(id, pid){ // one picture on its own card (opened from a dot on his map), developed the same way as on the pictures card
+  const p = photosOf(id).find(x => x.id === pid); if (!p || id !== ACTIVE) return; const card = readCard.firstElementChild, key = id + '|' + p.id; photoStop(); card.classList.add('big');
+  card.innerHTML = `<div style="font:700 35px Gaegu;margin:0 0 10px">A picture ${esc(CH[id].name)} took</div>` +
+    `<figure style="margin:0 0 18px"><div class="phoI" data-k="${id}|${esc(p.id)}" style="background:#1a1510;border:10px solid #ece2cc;border-bottom-width:14px;border-radius:3px;box-shadow:0 6px 18px rgba(0,0,0,.45);min-height:120px;color:#d8cdb6"><div style="padding:46px 10px;text-align:center;opacity:.75">Developing…</div></div><figcaption style="margin-top:8px"><b>${esc(p.caption || p.subject || '')}</b><br><span style="opacity:.65;font-size:17px">${fmtWhen(Date.parse(p.at))}${p.place && PLACES[p.place] ? ' · ' + esc(placeOf(p.place).name) : ''}</span></figcaption></figure>` +
+    `<button class="btn light" id="phoBack" style="width:100%">Back to his map</button><button class="btn" id="phoShut" style="margin-top:10px;width:100%">Close</button>`;
+  card.scrollTop = 0; readCard.style.display = 'flex';
+  card.querySelector('#phoShut').onclick = () => { readCard.style.display = 'none'; photoStop(); };
+  card.querySelector('#phoBack').onclick = () => { photoStop(); const g = document.getElementById('gmapBtn'); if (g) g.click(); else readCard.style.display = 'none'; };
+  PHO.q = PHO.img[key] ? [] : [{who:id, p}]; photoPaint(); photoNext(); }
 setTimeout(() => { const b = document.createElement('button'); b.className = 'btn light'; b.id = 'phoBtn'; b.textContent = 'His pictures'; const bs = document.getElementById('btns'), nb = document.getElementById('nbBtn'); if (!bs) return; bs.insertBefore(b, nb ? nb.nextSibling : null);
   b.onclick = () => { const id = ACTIVE, NMc = CH[id].name, card = readCard.firstElementChild, L = photosOf(id).slice(0, 16), has = (GIFTS || []).some(g => g && g.kind === 'camera' && (id === 'gage' ? g.to === 'gage' : g.to !== 'gage') && g.takenAt);
     card.classList.add('big');
