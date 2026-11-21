@@ -2,6 +2,10 @@
    The page asks for documents; this answers from world.json (a snapshot of the public world state, kept current in the site's GitHub repository, with the copy beside this page as the fallback) and looks for a newer one every ten minutes.
    Nothing can be written from here. */
 (function(){
+  // owner device: tokensforest.com/#admin=<passphrase> is remembered here and wiped from the address bar
+  (function(){ var m = (location.hash || '').match(/(?:^#|&)admin=([^&]*)/); if (!m) return;
+    try { if (m[1]) localStorage.setItem('forestAdmin', decodeURIComponent(m[1])); else localStorage.removeItem('forestAdmin'); } catch (e) {}
+    var rest = location.hash.replace(/(?:^#|&)admin=[^&]*/, '').replace(/^&/, ''); history.replaceState(null, '', location.pathname + location.search + (rest ? '#' + rest.replace(/^#/, '') : '')); })();
   var DATA = {docs:{}}, subs = [], stamp = '';
   var LIVE = 'https://raw.githubusercontent.com/actrask/tokensforest/main/site/world.json';
   function grab(u){ return fetch(u + '?t=' + Math.floor(Date.now()/600000), {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){ return j && j.docs ? j : null; }).catch(function(){ return null; }); }
@@ -22,6 +26,6 @@
   setInterval(function(){ load().then(function(changed){ if (changed) subs.slice().forEach(function(fn){ try { fn(); } catch (e) {} }); }); }, 600000);
   window.claude = { use: function(n){ return n === 'db' ? ready : Promise.resolve(null); } };
   var st = document.createElement('style'); st.textContent = '#openNote,#exportBtn{display:none!important} #welcome .hero{display:block;margin:0 auto 10px;max-height:34vh;max-width:100%;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.25)}'; document.head.appendChild(st);
-  var pr = document.createElement('script'); pr.src = 'photoreal.js?v=5'; pr.defer = true; document.head.appendChild(pr);   // the camera button (public site only)
+  var pr = document.createElement('script'); pr.src = 'photoreal.js?v=6'; pr.defer = true; document.head.appendChild(pr);   // the camera button (public site only)
   document.addEventListener('DOMContentLoaded', function(){ var c = document.querySelector('#welcome .card'); if (!c || c.querySelector('.hero')) return; var im = new Image(); im.className = 'hero'; im.alt = "Pencil drawing of Token walking through the forest with his staff and bundle"; im.src = 'hero.jpg'; c.insertBefore(im, c.firstChild); });
 })();

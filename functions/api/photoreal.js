@@ -8,6 +8,8 @@
 //                stranger can't run up your fal bill)
 //   DAILY_LIMIT  optional, photos per day for the whole site (default 25)
 //   IP_LIMIT     optional, photos per day per visitor (default 5)
+//   ADMIN_KEY    optional secret passphrase; a device that opened tokensforest.com/#admin=<passphrase>
+//                once sends it with each photo and skips both daily limits
 
 const PROMPT =
   'Turn this frame into a cinematic, photoreal film still, as if shot on location with an ARRI Alexa and a 35mm anamorphic lens. ' +
@@ -65,6 +67,11 @@ const ASPECTS = ['21:9', '16:9', '4:3', '3:2', '1:1', '2:3', '3:4', '9:16', '9:2
 
 const ALLOWED_HOSTS = [/^tokensforest\.com$/, /^www\.tokensforest\.com$/, /\.?tokensforest\.pages\.dev$/, /^localhost$/, /^127\.0\.0\.1$/];
 
+function sameText(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0;
+}
+
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
@@ -97,9 +104,10 @@ async function handle({ request, env }) {
   const siteKey = `site:${day}`, ipKey = `ip:${day}:${ip}`;
   const [siteN, ipN] = await Promise.all([env.PHOTO_KV.get(siteKey), env.PHOTO_KV.get(ipKey)]).then(v => v.map(x => parseInt(x || '0', 10)));
   const siteMax = parseInt(env.DAILY_LIMIT || '25', 10), ipMax = parseInt(env.IP_LIMIT || '5', 10);
-  if (siteN >= siteMax) return json({ error: 'The forest camera has taken all its photos for today. Try again tomorrow.' }, 429);
-  if (ipN >= ipMax) return json({ error: 'You have used all your photos for today. Try again tomorrow.' }, 429);
-  await Promise.all([
+  const admin = !!env.ADMIN_KEY && sameText(request.headers.get('X-Forest-Admin') || '', env.ADMIN_KEY);
+  if (!admin && siteN >= siteMax) return json({ error: 'The forest camera has taken all its photos for today. Try again tomorrow.' }, 429);
+  if (!admin && ipN >= ipMax) return json({ error: 'You have used all your photos for today. Try again tomorrow.' }, 429);
+  if (!admin) await Promise.all([
     env.PHOTO_KV.put(siteKey, String(siteN + 1), { expirationTtl: 172800 }),
     env.PHOTO_KV.put(ipKey, String(ipN + 1), { expirationTtl: 172800 }),
   ]);
