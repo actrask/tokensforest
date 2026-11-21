@@ -30,12 +30,12 @@ function json(obj, status = 200) {
 
 export async function onRequestPost(ctx) {
   try { return await handle(ctx); }
-  catch (e) { console.log('photoreal crash', e && e.stack); return json({ error: 'The photo did not develop. Try again in a moment.', detail: String(e && e.message || e).slice(0, 200) }, 500); }
+  catch (e) { console.log('photoreal crash', e && e.stack); return json({ error: 'The photo did not develop. Try again in a moment.', detail: String(e && e.message || e).slice(0, 200) }, 422); }
 }
 
 async function handle({ request, env }) {
-  if (!env.FAL_KEY) return json({ error: 'The camera is not switched on yet.' }, 503);
-  if (!env.PHOTO_KV) return json({ error: 'The camera is missing its daily limit setting.' }, 503);
+  if (!env.FAL_KEY) return json({ error: 'The camera is not switched on yet.' }, 424);
+  if (!env.PHOTO_KV) return json({ error: 'The camera is missing its daily limit setting.' }, 424);
 
   // only answer the forest's own pages
   let host = '';
@@ -71,11 +71,11 @@ async function handle({ request, env }) {
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
     console.log('fal error', r.status, detail);
-    return json({ error: 'The photo did not develop. Try again in a moment.', detail: `fal ${r.status}: ${detail.slice(0, 160)}` }, 502);
+    return json({ error: 'The photo did not develop. Try again in a moment.', detail: `fal ${r.status}: ${detail.slice(0, 160)}` }, 424);
   }
   const out = await r.json();
   const url = out && out.images && out.images[0] && out.images[0].url;
-  if (!url) return json({ error: 'The photo did not develop. Try again in a moment.' }, 502);
+  if (!url) return json({ error: 'The photo did not develop. Try again in a moment.' }, 424);
   return json({ url, left: Math.max(0, ipMax - ipN - 1) });
 }
 
