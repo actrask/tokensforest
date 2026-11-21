@@ -12,23 +12,23 @@
 //                once sends it with each photo and skips both daily limits
 
 const PROMPT =
-  'Reimagine this frame as a single still from a major live-action motion picture, lit and shot by a world-class cinematographer ' +
-  'in the vein of Roger Deakins or Emmanuel Lubezki, on an ARRI Alexa 65 with vintage anamorphic lenses. ' +
+  'Turn this frame into a single still from a major live-action feature film, photographed on location by a world-class cinematographer ' +
+  '(Roger Deakins, Emmanuel Lubezki) on an ARRI Alexa with anamorphic lenses. It must look like a real photograph of a real place, not CG, not animation. ' +
   'Keep the same place, the same characters with their exact designs and what they are doing, and the key props that tell the story ' +
-  '(shelter, fire, lantern, workbench, bed). Keep the general viewpoint and the characters\' poses, but recompose the way a cinematographer would: ' +
-  'a lower camera near the character\'s eye level, a longer lens that compresses the background, the character clearly the subject, ' +
-  'and minor clutter simplified or left out so the frame reads cleanly. ' +
+  '(shelter, fire, lantern, workbench, bed). Keep the general viewpoint and the characters\' poses; you may recompose slightly the way a cinematographer would, ' +
+  'with the camera at the character\'s eye level and minor clutter left out. ' +
   'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
   'and never add vehicles, boats or new furniture. ' +
-  'Light: dramatic, motivated and high-contrast. Outdoors by day, a low raking sun behind the scene, strong warm rim light, volumetric god rays ' +
-  'through haze and drifting dust, a soft anamorphic flare, deep rich shadows. At night or indoors, warm firelight, lantern and candle light ' +
-  'pooling against deep darkness with painterly falloff. Match the time of day and weather given. ' +
-  'Depth: very shallow depth of field, soft out-of-focus foreground grass or ferns framing the shot, the background melting into haze and bokeh. ' +
-  'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with moss, needles and debris, ' +
-  'never clean sand, never evenly scattered decorative leaves. Blankets and bedding are dense, thick wool that catches warm rim light. ' +
-  'Characters are life-size and handcrafted, never toys or miniatures, in real materials. ' +
-  'Grade: rich filmic color, warm highlights and cool shadows, fine 35mm grain, subtle halation, high dynamic range. ' +
-  'Never flat, evenly lit, over-detailed, video-game, CG, clay or miniature looking; no outlines, ink lines or crosshatching. ' +
+  'Scale: everything is full-size and filmed at full scale. The characters are living beings, never dolls, puppets, figurines or toys: ' +
+  'render them the way a top VFX studio renders a digital creature in a live-action film, with real skin, real fabric, weight, and natural light on them. ' +
+  'Normal cinema depth of field for a full-size scene, background softly out of focus; never macro, tilt-shift, diorama or miniature-looking. ' +
+  'Light: naturalistic and motivated, with real contrast and deep shadows. Outdoors by day, soft directional sunlight filtered through the canopy, ' +
+  'gentle haze in the distance; do not put a sunburst or starburst in the frame and do not make light glow. At night or indoors, warm firelight, lantern ' +
+  'and candle light falling off into real darkness. Match the time of day and weather given. ' +
+  'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with needles and debris. ' +
+  'Blankets and bedding are dense, thick wool. ' +
+  'Color: restrained, natural film color, slightly muted, true exposure, fine film grain. Never saturated, glossy, HDR, glowing, cute or storybook. ' +
+  'No outlines, ink lines or crosshatching. ' +
   'Do not add any people, creatures, robots or characters that are not already in the frame, and do not remove any that are.';
 
 // art notes per character, applied whenever they could be in the frame
