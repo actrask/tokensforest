@@ -23,8 +23,9 @@ const PROMPT =
 
 // art notes per character, applied whenever they could be in the frame
 const CHARACTER_NOTES =
-  'Character notes: Gage (the tinkerer with large round brass goggles and spiky hair) is a living being with real, natural skin on his face, head, neck and hands: ' +
-  'soft, warm, slightly weathered skin with subtle pores and natural color variation, never brass, metal, bronze, plastic or wood. ' +
+  'Character notes: Gage (the tinkerer with large round brass goggles and spiky hair) is young and youthful: a fresh, smooth, boyish face with no wrinkles, ' +
+  'no age lines, no sagging, bright wide eyes and soft rounded features, never old or elderly. His face, head, neck, arms and hands are real, natural, healthy young skin ' +
+  'with subtle pores and natural color, never brass, metal, bronze, plastic or wood. His spiky hair is real hair, not metal spikes. ' +
   'Only his goggles, buckles and tools are metal; his clothes are real cloth and leather.';
 
 function promptFor(who) {
