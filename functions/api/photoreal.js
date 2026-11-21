@@ -28,7 +28,12 @@ function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(ctx) {
+  try { return await handle(ctx); }
+  catch (e) { console.log('photoreal crash', e && e.stack); return json({ error: 'The photo did not develop. Try again in a moment.', detail: String(e && e.message || e).slice(0, 200) }, 500); }
+}
+
+async function handle({ request, env }) {
   if (!env.FAL_KEY) return json({ error: 'The camera is not switched on yet.' }, 503);
   if (!env.PHOTO_KV) return json({ error: 'The camera is missing its daily limit setting.' }, 503);
 
@@ -66,7 +71,7 @@ export async function onRequestPost({ request, env }) {
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
     console.log('fal error', r.status, detail);
-    return json({ error: 'The photo did not develop. Try again in a moment.' }, 502);
+    return json({ error: 'The photo did not develop. Try again in a moment.', detail: `fal ${r.status}: ${detail.slice(0, 160)}` }, 502);
   }
   const out = await r.json();
   const url = out && out.images && out.images[0] && out.images[0].url;
