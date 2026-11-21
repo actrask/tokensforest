@@ -8,7 +8,7 @@
 //                stranger can't run up your fal bill)
 //   DAILY_LIMIT  optional, photos per day for the whole site (default 25)
 //   IP_LIMIT     optional, photos per day per visitor (default 5)
-//   ADMIN_KEY    optional secret passphrase; a device that opened tokensforest.com/#admin=<passphrase>
+//   OWNER_KEY    optional secret passphrase (ADMIN_KEY also accepted); a device that opened tokensforest.com/#admin=<passphrase>
 //                once sends it with each photo and skips both daily limits
 
 const PROMPT =
@@ -104,7 +104,8 @@ async function handle({ request, env }) {
   const siteKey = `site:${day}`, ipKey = `ip:${day}:${ip}`;
   const [siteN, ipN] = await Promise.all([env.PHOTO_KV.get(siteKey), env.PHOTO_KV.get(ipKey)]).then(v => v.map(x => parseInt(x || '0', 10)));
   const siteMax = parseInt(env.DAILY_LIMIT || '25', 10), ipMax = parseInt(env.IP_LIMIT || '5', 10);
-  const admin = !!env.ADMIN_KEY && sameText(request.headers.get('X-Forest-Admin') || '', env.ADMIN_KEY);
+  const given = (request.headers.get('X-Forest-Admin') || '').trim();
+  const admin = !!given && [env.OWNER_KEY, env.ADMIN_KEY].some(k => typeof k === 'string' && k.trim() && sameText(given, k.trim()));
   if (!admin && siteN >= siteMax) return json({ error: 'The forest camera has taken all its photos for today. Try again tomorrow.' }, 429);
   if (!admin && ipN >= ipMax) return json({ error: 'You have used all your photos for today. Try again tomorrow.' }, 429);
   if (!admin) await Promise.all([
