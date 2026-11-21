@@ -6,8 +6,8 @@
 //   FAL_KEY      secret, your fal.ai API key (required)
 //   PHOTO_KV     KV namespace binding, used for the daily caps (required, so a
 //                stranger can't run up your fal bill)
-//   DAILY_LIMIT  optional, photos per day for the whole site (default 25)
-//   IP_LIMIT     optional, photos per day per visitor (default 5)
+//   DAILY_LIMIT  optional, photos per day for the whole site (no limit if unset)
+//   IP_LIMIT     optional, photos per day per visitor (no limit if unset)
 //   OWNER_KEY    optional secret passphrase (ADMIN_KEY also accepted); a device that opened tokensforest.com/#admin=<passphrase>
 //                once sends it with each photo and skips both daily limits
 
@@ -103,7 +103,8 @@ async function handle({ request, env }) {
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   const siteKey = `site:${day}`, ipKey = `ip:${day}:${ip}`;
   const [siteN, ipN] = await Promise.all([env.PHOTO_KV.get(siteKey), env.PHOTO_KV.get(ipKey)]).then(v => v.map(x => parseInt(x || '0', 10)));
-  const siteMax = parseInt(env.DAILY_LIMIT || '25', 10), ipMax = parseInt(env.IP_LIMIT || '5', 10);
+  // limits are off unless set in Cloudflare (DAILY_LIMIT / IP_LIMIT)
+  const siteMax = env.DAILY_LIMIT ? parseInt(env.DAILY_LIMIT, 10) : Infinity, ipMax = env.IP_LIMIT ? parseInt(env.IP_LIMIT, 10) : Infinity;
   const given = (request.headers.get('X-Forest-Admin') || '').trim();
   const admin = !!given && [env.OWNER_KEY, env.ADMIN_KEY].some(k => typeof k === 'string' && k.trim() && sameText(given, k.trim()));
   if (!admin && siteN >= siteMax) return json({ error: 'The forest camera has taken all its photos for today. Try again tomorrow.' }, 429);
@@ -139,7 +140,7 @@ async function handle({ request, env }) {
       saved = '/api/photo/' + id + '.jpg';
     }
   } catch (e) { console.log('photo save failed', e && e.message); }
-  return json({ url: saved, id, model, left: Math.max(0, ipMax - ipN - 1) });
+  return json({ url: saved, id, model, left: ipMax === Infinity ? null : Math.max(0, ipMax - ipN - 1) });
 }
 
 export function onRequest() {
