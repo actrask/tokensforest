@@ -14,13 +14,13 @@
     '#prFrame.dev img{filter:grayscale(.6) brightness(.55) blur(1.5px)}' +
     '#prMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f4ead8;font:600 15px/1.4 system-ui,sans-serif;text-align:center;padding:20px;text-shadow:0 1px 4px #000}' +
     '#prBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}' +
-    '#prBar .btn{min-width:90px}' +
+    '#prBar .btn{min-width:90px}' + '#prFrame img{cursor:pointer}' + '#prCount{color:#cbbfa8;font:13px system-ui,sans-serif;text-align:center;min-height:16px}' + '#prFrame .nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font:600 30px system-ui;opacity:.55;pointer-events:none;text-shadow:0 1px 6px #000;padding:0 10px}' + '#prFrame .nav.l{left:0} #prFrame .nav.r{right:0}' +
     '#photoBtn{position:fixed;right:132px;bottom:16px;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:opacity .6s}' +
     '#photoBtn svg{width:21px;height:21px;display:block}' +
     'body.cine #photoBtn{opacity:0;pointer-events:none}' +
     '@media (max-width:640px){#photoBtn{right:120px;bottom:104px}}' +
-    '#galleryBtn{position:fixed;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:none;align-items:center;justify-content:center;transition:opacity .6s}' +
-    '#galleryBtn.has{display:flex} #galleryBtn svg{width:20px;height:20px;display:block}' +
+    '#galleryBtn{position:fixed;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:opacity .6s}' +
+    '#galleryBtn svg{width:20px;height:20px;display:block}' +
     'body.cine #galleryBtn{opacity:0;pointer-events:none}' +
     '#prGal{position:fixed;inset:0;z-index:49;background:rgba(12,10,8,.92);display:none;flex-direction:column;padding:16px;box-sizing:border-box}' +
     '#prGal.on{display:flex} #prGal h3{color:#f4ead8;font:600 17px system-ui,sans-serif;margin:4px 4px 12px}' +
@@ -34,18 +34,44 @@
   var shade = el('div', {id:'prShade'});
   var frame = el('div', {id:'prFrame'}); var img = el('img', {alt:'Photo of the forest'}); var msg = el('div', {id:'prMsg'});
   frame.appendChild(img); frame.appendChild(msg);
+  var navL = el('div', {'class':'nav l'}, '&#8249;'), navR = el('div', {'class':'nav r'}, '&#8250;'); frame.appendChild(navL); frame.appendChild(navR);
+  var count = el('div', {id:'prCount'});
   var bar = el('div', {id:'prBar'});
   var bCompare = el('button', {'class':'btn light'}, 'Show original');
   var bSave = el('button', {'class':'btn light'}, 'Save');
   var bClose = el('button', {'class':'btn'}, 'Close');
   bar.appendChild(bCompare); bar.appendChild(bSave); bar.appendChild(bClose);
-  shade.appendChild(frame); shade.appendChild(bar);
+  shade.appendChild(frame); shade.appendChild(count); shade.appendChild(bar);
 
   var original = '', photo = '', showing = 'photo';
   var KEY = 'forestPhotos';
   function loadList(){ try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
   function saveList(l){ try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 300))); } catch (e) {} }
   function remember(p){ var l = loadList(); l.unshift(p); saveList(l); refreshGalleryBtn(); }
+  var LIST = [], IDX = -1;
+  function label(p){ if (!p) return ''; var d = new Date(p.at || Date.now()); return (p.who ? p.who.charAt(0).toUpperCase() + p.who.slice(1) + ' \u00b7 ' : '') + d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'}); }
+  function showAt(i){
+    if (!LIST.length) return; IDX = (i + LIST.length) % LIST.length; var p = LIST[IDX];
+    photo = p.url; original = p.original || ''; showing = 'photo'; bCompare.textContent = 'Show original';
+    img.src = p.url; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons();
+    count.textContent = (LIST.length > 1 ? (IDX + 1) + ' / ' + LIST.length + '  \u00b7  ' : '') + label(p) + (LIST.length > 1 ? '  \u00b7  tap the photo for the next one' : '');
+    navL.style.display = navR.style.display = LIST.length > 1 ? '' : 'none';
+  }
+  img.addEventListener('click', function(e){
+    if (busy && !photo) return; if (LIST.length < 2) return;
+    var r = img.getBoundingClientRect(); showAt(IDX + ((e.clientX - r.left) < r.width * 0.33 ? -1 : 1));
+  });
+  function absUrl(u){ return u && u.charAt(0) === '/' ? location.origin + u : u; }
+  function fetchAll(){
+    return fetch('/api/photos', {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : {photos: []}; }).catch(function(){ return {photos: []}; })
+      .then(function(j){
+        var seen = {}, all = [];
+        (j.photos || []).forEach(function(p){ p.url = absUrl(p.url); if (!seen[p.url]) { seen[p.url] = 1; all.push(p); } });
+        loadList().forEach(function(p){ if (!seen[p.url]) { seen[p.url] = 1; all.push(p); } });
+        all.sort(function(a, b){ return String(b.at || '').localeCompare(String(a.at || '')); });
+        return all;
+      });
+  }
   function setButtons(){ bSave.style.display = photo ? '' : 'none'; bCompare.style.display = (photo && original) ? '' : 'none'; }
   bClose.onclick = function(){ shade.classList.remove('on'); };
   bCompare.onclick = function(){ showing = showing === 'photo' ? 'orig' : 'photo'; img.src = showing === 'photo' ? photo : original; bCompare.textContent = showing === 'photo' ? 'Show original' : 'Show photo'; };
@@ -63,18 +89,20 @@
   gal.appendChild(galTitle); gal.appendChild(grid); gal.appendChild(galBar);
   bGalClose.onclick = function(){ gal.classList.remove('on'); };
   var galBtn;
-  function refreshGalleryBtn(){ if (galBtn) galBtn.classList.toggle('has', loadList().length > 0); }
+  function refreshGalleryBtn(){}
   function openGallery(){
-    grid.innerHTML = '';
-    loadList().forEach(function(p){
-      var f = el('figure'), im = el('img', {loading:'lazy', alt:'Forest photo'}), cap = el('figcaption');
-      im.src = p.url; im.onerror = function(){ f.style.display = 'none'; };
-      var d = new Date(p.at); cap.textContent = (p.who ? p.who.charAt(0).toUpperCase() + p.who.slice(1) + ' · ' : '') + d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
-      f.appendChild(im); f.appendChild(cap);
-      f.onclick = function(){ photo = p.url; original = ''; showing = 'photo'; img.src = p.url; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons(); shade.classList.add('on'); };
-      grid.appendChild(f);
+    grid.innerHTML = '<div style="color:#cbbfa8;font:14px system-ui">Loading photos\u2026</div>'; gal.classList.add('on');
+    fetchAll().then(function(all){
+      LIST = all; grid.innerHTML = '';
+      galTitle.textContent = all.length ? 'Forest photos (' + all.length + ')' : 'No photos yet: tap the camera to take one';
+      all.forEach(function(p, i){
+        var f = el('figure'), im = el('img', {loading:'lazy', alt:'Forest photo'}), cap = el('figcaption');
+        im.src = p.url; im.onerror = function(){ f.style.display = 'none'; };
+        cap.textContent = label(p); f.appendChild(im); f.appendChild(cap);
+        f.onclick = function(){ showAt(i); shade.classList.add('on'); };
+        grid.appendChild(f);
+      });
     });
-    gal.classList.add('on');
   }
 
   // grab the canvas right after the page has drawn the next frame
@@ -92,7 +120,7 @@
 
   function shoot(){
     if (busy) { shade.classList.add('on'); return; }
-    busy = true; photo = ''; showing = 'photo'; bCompare.textContent = 'Show original'; setButtons();
+    busy = true; photo = ''; showing = 'photo'; bCompare.textContent = 'Show original'; setButtons(); count.textContent = ''; navL.style.display = navR.style.display = 'none';
     grab().then(function(g){
       original = g.data; img.src = original; frame.classList.add('dev'); msg.textContent = 'Developing the photo… (about 10–20 seconds)'; msg.style.display = 'flex';
       shade.classList.add('on');
@@ -104,7 +132,9 @@
           return new Promise(function(res, rej){ var p = new Image(); p.onload = function(){ res(j.url); }; p.onerror = function(){ rej(new Error('The photo did not load.')); }; p.src = j.url; });
         })
         .then(function(u){ photo = u; img.src = u; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons();
-          remember({url: u, who: whoNow(), at: new Date().toISOString()}); });
+          var p = {url: u, who: whoNow(), at: new Date().toISOString(), original: original}; remember({url: u, who: p.who, at: p.at});
+          LIST = [p]; showAt(0);
+          fetchAll().then(function(all){ LIST = [p].concat(all.filter(function(x){ return x.url !== u; })); if (IDX === 0 && photo === u) showAt(0); }); });
     }).catch(function(e){ frame.classList.add('dev'); msg.textContent = e.message || 'The photo did not develop.'; msg.style.display = 'flex'; })
       .then(function(){ busy = false; });
   }
