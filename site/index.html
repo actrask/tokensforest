@@ -4474,6 +4474,41 @@ function makeTreasure(kind, color){
     case 'bundle': put(SphG(0.06,16,10), c ? 'main' : 0xd8c9a4, 0,0.04,0, 0,0,0, 1.15,0.7,1); put(SphG(0.018,10,8), c ? 'main' : 0xcbb995, 0,0.085,0); put(new THREE.ConeGeometry(0.014,0.04,8), c ? 'main' : 0xcbb995, 0.018,0.1,0, 0,0,-0.6); put(new THREE.ConeGeometry(0.014,0.04,8), c ? 'main' : 0xcbb995, -0.018,0.1,0, 0,0,0.6); break;
     case 'stick': put(CylG(0.008,0.01,0.34,6), c ? 'main' : 0x8a6a48, 0,0.008,0, 0,0,Math.PI/2); break;
     case 'canvas': put(new THREE.BoxGeometry(0.16,0.03,0.11), c ? 'main' : 0xd8c9a4, 0,0.015,0); break;
+    case 'paints': { // a wooden paint box standing open: twenty-four pans of color in the tray, a mixing palette inside the lid, six corked jars of loose pigment and a tin water cup beside it
+      const wood = c ? 'main' : 0x8a5f38, dark = 0x3a2817, brass = 0xb8923a;
+      put(new THREE.BoxGeometry(0.2, 0.034, 0.13), wood, 0, 0.017, 0); put(new THREE.BoxGeometry(0.186, 0.004, 0.116), dark, 0, 0.0345, 0);
+      const HUES = [0xc8322a, 0xd9562a, 0xe58a2a, 0xedc23a, 0xf2e08a, 0xb9c94a, 0x5fa33c, 0x2f7a46, 0x2a8a84, 0x3a9ac8, 0x2f5fb0, 0x27367a, 0x5a3a8a, 0x8a3a82, 0xc2487a, 0xe8a0a8, 0x8a5a36, 0x5a3a22, 0xb08a5a, 0xd8c4a0, 0xf4f0e6, 0x9aa0a4, 0x55595e, 0x1c1c1e];
+      for (let i = 0; i < 24; i++){ const x = -0.075 + (i % 6)*0.03, z = -0.042 + Math.floor(i/6)*0.028; put(new THREE.BoxGeometry(0.025, 0.006, 0.023), 0xd8d2c4, x, 0.0385, z); put(new THREE.BoxGeometry(0.021, 0.005, 0.019), HUES[i], x, 0.0405, z); }
+      const lid = new THREE.Group(); lid.position.set(0, 0.034, -0.065); lid.rotation.x = -0.24; g.add(lid);
+      const lp = (geo, col, x, y, z, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(geo, TM(col === 'main' ? (c || 0x8a5f38) : col)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; lid.add(m); return m; };
+      lp(new THREE.BoxGeometry(0.2, 0.13, 0.01), wood, 0, 0.065, -0.005); lp(new THREE.BoxGeometry(0.182, 0.112, 0.003), 0xf1ece0, 0, 0.065, 0.0015);
+      [[-0.05, 0.09, 0xc8322a, 1.2], [-0.02, 0.07, 0xe58a2a, 0.9], [0.02, 0.095, 0x3a9ac8, 1.1], [0.05, 0.06, 0x5fa33c, 1], [0.0, 0.04, 0x8a3a82, 0.8], [-0.06, 0.045, 0xedc23a, 0.9]].forEach(([x, y, col, s]) => lp(new THREE.SphereGeometry(0.009, 10, 6), col, x, y, 0.0032, s, s*0.8, 0.25));
+      for (const sx of [-1, 1]) put(CylG(0.004, 0.004, 0.022, 8), brass, sx*0.06, 0.035, -0.066, 0, 0, Math.PI/2);
+      const PIG = [0xb8322a, 0xd9a02a, 0x2f7a46, 0x2f5fb0, 0x5a3a22, 0xf4f0e6];
+      for (let i = 0; i < 6; i++){ const x = -0.07 + i*0.028, z = 0.092 + (i % 2)*0.012; put(CylG(0.011, 0.011, 0.026, 12), PIG[i], x, 0.013, z); put(CylG(0.0115, 0.0115, 0.004, 12), 0xcfd6d8, x, 0.027, z); put(CylG(0.007, 0.008, 0.009, 8), 0xb08a5a, x, 0.0335, z); }
+      put(CylG(0.017, 0.015, 0.032, 14), 0xaab0b4, 0.128, 0.016, 0.03); put(CylG(0.0152, 0.0152, 0.002, 14), 0x7fa0b4, 0.128, 0.0325, 0.03);
+      break; }
+    case 'brushes': { // six brushes of different sizes standing in a small clay pot: fine points, rounds, a flat one and a fat soft mop
+      const clay = c ? 'main' : 0xa8643c; put(CylG(0.03, 0.023, 0.05, 16), clay, 0, 0.025, 0); put(TorG(0.03, 0.0035, 6, 18), clay, 0, 0.05, 0, Math.PI/2); put(CylG(0.0265, 0.0265, 0.002, 14), 0x2a1a12, 0, 0.0505, 0);
+      const SET = [[0.17, 0.0022, 0.0022, 0.016, 0x7a2a22, 0x3a2a1c, 0], [0.16, 0.0024, 0.003, 0.018, 0x2f4a6a, 0x3a2a1c, 0], [0.15, 0.003, 0.0048, 0.02, 0x8a6a3a, 0xc9b48a, 0], [0.145, 0.0032, 0.006, 0.022, 0x3a5a3a, 0x3a2a1c, 0], [0.14, 0.0036, 0.009, 0.02, 0x6a4a2a, 0xd8c8a8, 1], [0.13, 0.0042, 0.011, 0.028, 0x4a2a1a, 0xe6dcc6, 0]];
+      SET.forEach(([L, hr, tr, tl, hc, bc, flat], i) => { const b = new THREE.Group(), a = i*Math.PI/3 + 0.3, add = (geo, col, y, sx = 1, sz = 1) => { const m = new THREE.Mesh(geo, TM(col)); m.position.y = y; m.scale.set(sx, 1, sz); m.castShadow = true; b.add(m); };
+        add(CylG(hr, hr*0.6, L, 7), hc, L/2); add(CylG(Math.max(hr, tr*0.7)*1.15, hr*1.15, 0.014, 8), 0xb4b9be, L + 0.007, flat ? 1.5 : 1, flat ? 0.5 : 1);
+        add(flat ? new THREE.BoxGeometry(tr*2.2, tl, tr*0.5) : new THREE.ConeGeometry(tr, tl, 9), bc, L + 0.014 + tl/2);
+        b.position.set(Math.sin(a)*0.012, 0.012, Math.cos(a)*0.012); b.rotation.set(Math.cos(a)*0.2, a, -Math.sin(a)*0.2, 'YXZ'); b.rotation.set(0.2*Math.cos(a), 0, -0.2*Math.sin(a)); g.add(b); });
+      break; }
+    case 'papers': { // a thick stack of heavy paper tied with twine, the top sheets a little out of square
+      put(new THREE.BoxGeometry(0.15, 0.036, 0.108), c ? 'main' : 0xeee6d2, 0, 0.018, 0); for (let k = 0; k < 9; k++) put(new THREE.BoxGeometry(0.151, 0.0006, 0.109), 0xcfc6ae, 0, 0.004 + k*0.0036, 0);
+      put(new THREE.BoxGeometry(0.15, 0.0012, 0.108), 0xf6f0e2, 0.003, 0.0368, -0.002, 0, 0.035, 0); put(new THREE.BoxGeometry(0.15, 0.0012, 0.108), 0xf1ead8, -0.002, 0.038, 0.002, 0, -0.05, 0);
+      put(new THREE.BoxGeometry(0.154, 0.041, 0.0035), 0x8a6a48, 0, 0.0195, 0.012); put(new THREE.BoxGeometry(0.0035, 0.041, 0.112), 0x8a6a48, -0.02, 0.0195, 0); put(TorG(0.008, 0.0016, 5, 12), 0x8a6a48, -0.02, 0.041, 0.012, Math.PI/2); put(TorG(0.008, 0.0016, 5, 12), 0x8a6a48, -0.034, 0.041, 0.012, Math.PI/2);
+      break; }
+    case 'canvases': { // small stretched canvases leaning together on their edges, linen fronts and the stretcher bars showing at the back; each small enough to go through his round door
+      for (let k = 0; k < 6; k++){ const cv = new THREE.Group(), w = 0.13 - (k % 3)*0.012, h = 0.165 - (k % 2)*0.02, add = (geo, col, x, y, z) => { const m = new THREE.Mesh(geo, TM(col)); m.position.set(x, y, z); m.castShadow = true; cv.add(m); };
+        add(new THREE.BoxGeometry(w, h, 0.004), c ? c : 0xefe7d4, 0, h/2, 0.006); add(new THREE.BoxGeometry(w, h, 0.0012), 0xd9cdb2, 0, h/2, 0.0036);
+        for (const s of [-1, 1]){ add(new THREE.BoxGeometry(0.012, h, 0.011), 0xa67c4a, s*(w/2 - 0.006), h/2, -0.0015); add(new THREE.BoxGeometry(w, 0.012, 0.011), 0xa67c4a, 0, h/2 + s*(h/2 - 0.006), -0.0015); }
+        add(new THREE.BoxGeometry(w - 0.02, 0.01, 0.009), 0x9a7040, 0, h/2, -0.0015);
+        cv.position.set(((k*37) % 5 - 2)*0.004, 0, -0.045 + k*0.019); cv.rotation.set(-0.2, ((k*53) % 5 - 2)*0.02, 0); g.add(cv); }
+      put(new THREE.BoxGeometry(0.11, 0.13, 0.02), 0x6a4a2a, 0, 0.066, -0.075, -0.2, 0, 0);   // the board they lean against
+      break; }
     case 'notebook': put(new THREE.BoxGeometry(0.115,0.02,0.085), c ? 'main' : 0x5a3a26, 0,0.01,0); put(new THREE.BoxGeometry(0.108,0.016,0.08), 0xf1e9d6, 0.004,0.011,0); put(new THREE.BoxGeometry(0.008,0.024,0.087), 0x4a2e1e, -0.054,0.012,0); put(new THREE.BoxGeometry(0.01,0.022,0.088), 0x2a1a12, 0.03,0.012,0); break;
     case 'cord': for (let k=0;k<3;k++) put(TorG(0.03-k*0.006,0.006,6,16), c ? 'main' : 0xb59b6e, 0,0.006+k*0.008,0, Math.PI/2); put(CylG(0.004,0.004,0.12,5), 0xb59b6e, 0.04,0.01,0, 0,0,Math.PI/2.3); break;
     case 'paper': put(CylG(0.03,0.03,0.36,16), c ? 'main' : 0xefe6d0, 0,0.03,0, 0,0,Math.PI/2); put(CylG(0.024,0.024,0.362,12), 0xd9cdb2, 0,0.03,0, 0,0,Math.PI/2); put(TorG(0.031,0.003,5,16), 0x8a6a48, 0.07,0.03,0, 0,Math.PI/2,0); put(TorG(0.031,0.003,5,16), 0x8a6a48, -0.07,0.03,0, 0,Math.PI/2,0); break;   // a big sheet rolled up and tied with twine
@@ -4667,11 +4702,12 @@ let GIFTS = []; const giftGroup = new THREE.Group(); scene.add(giftGroup); let g
 function updateGifts(T){
   const key = JSON.stringify(GIFTS); if (key !== giftKey){ giftKey = key; while (giftGroup.children.length) giftGroup.remove(giftGroup.children[0]);
     let nBig = 0, nSmall = 0;
-    GIFTS.forEach(g => { const m = makeTreasure(g.kind, g.color);
-      if (/^(toolchest|nailkeg|axe|saw|plank)$/.test(g.kind)){ // too big for a basket: it stands on the ground beside the stump, at its real size, each in a spot of its own
-        const a = -0.25 + (nBig % 4)*0.62, r = 1.12 + (nBig > 3 ? 0.45 : 0), x = GIFT_SPOT.x + Math.cos(a)*r, z = GIFT_SPOT.z + Math.sin(a)*r; nBig++;
+    const BIGK = /^(toolchest|nailkeg|axe|saw|plank|paints|papers|canvases)$/, gT = (v, d) => { const t = Date.parse(v || ''); return isNaN(t) ? d : t; };
+    GIFTS.forEach((g, gi) => { const m = makeTreasure(g.kind, g.color), big = BIGK.test(g.kind), kk = GIFTS.filter((h, j) => j < gi && BIGK.test(h.kind) === big && gT(h.takenAt, Infinity) > gT(g.placedAt, 0)).length;
+      if (big){ // too big for a basket: it stands on the ground beside the stump, at its real size, each in a spot of its own
+        const a = -0.25 + (kk % 4)*0.62, r = 1.12 + (kk > 3 ? 0.45 : 0), x = GIFT_SPOT.x + Math.cos(a)*r, z = GIFT_SPOT.z + Math.sin(a)*r;
         m.scale.setScalar(1.2); m.position.set(x, Hm(x, z) + 0.004, z); m.rotation.set(0, -a + Math.PI/2 + 0.2, 0); }
-      else { const k = nSmall++; m.scale.setScalar(1.7); m.position.set(GIFT_SPOT.x + (k%2 ? 0.07 : -0.05), GIFT_SPOT.y + k*0.03, GIFT_SPOT.z + (k%2 ? -0.04 : 0.03)); m.rotation.set(-0.35, 0.6 + k, 0.1); }
+      else { const k = kk; m.scale.setScalar(g.kind === 'brushes' ? 1.25 : 1.7); m.position.set(GIFT_SPOT.x + (k%2 ? 0.07 : -0.05), GIFT_SPOT.y + k*0.03, GIFT_SPOT.z + (k%2 ? -0.04 : 0.03)); m.rotation.set(-0.35, 0.6 + k, 0.1); }
       m.userData.g = g; giftGroup.add(m); }); }
   for (const m of giftGroup.children){ const g = m.userData.g, a = Date.parse(g.placedAt || 0), b = g.takenAt ? Date.parse(g.takenAt) : Infinity; m.visible = (isNaN(a) || a <= T) && T < b; }
 }
