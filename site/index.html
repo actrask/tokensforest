@@ -4494,7 +4494,8 @@ function addInkHollow(m){ // the hollow he ground into the stone, holding a pool
   const ink = new THREE.Mesh(new THREE.CircleGeometry(0.068, 32), new THREE.MeshPhysicalMaterial({color:0x1b100a, roughness:0.06, clearcoat:1, clearcoatRoughness:0.02, envMap:GLASS_ENV, envMapIntensity:1.3}));
   ink.rotation.x = -Math.PI/2; ink.position.copy(at).add(new THREE.Vector3(0, 0.001, 0)); rim.material.userData.keep = ink.material.userData.keep = true; rim.castShadow = true; ink.receiveShadow = true;
   m.add(rim, ink); m.userData.inkTop = at.clone().add(new THREE.Vector3(0, 0.003, 0)); }
-function makeFeature(kind){
+let CAIRN_GEO = null;   // one flat creek stone, shared by every stone of every cairn and heap
+function makeFeature(kind, f){
   const g = new THREE.Group(); const fp = (geo, mat, x, y, z, o={}) => { const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); if (o.rx) m.rotation.x = o.rx; if (o.ry) m.rotation.y = o.ry; if (o.rz) m.rotation.z = o.rz; if (o.s) m.scale.set(...o.s); m.castShadow = o.cast !== false; m.receiveShadow = true; g.add(m); return m; };
   const brown = M(0x9a6a3a), dry = M(0xb59b6e), tinM = M(0x9aa0a4), sackM = M(0xb8a27a);
   switch (kind){
@@ -4529,7 +4530,15 @@ function makeFeature(kind){
     case 'stump': fp(wobble(CylG(0.3,0.4,0.5,10),0.06), mats.bark, 0,0.25,0); break;
     case 'bush': fp(wobble(IcoG(0.5,1),0.2), mats.bush, 0,0.42,0); break;
     case 'sapling': fp(CylG(0.03,0.05,1.6,5), mats.bark, 0,0.8,0); fp(wobble(IcoG(0.45,1),0.2), mats.leaf, 0,1.75,0); break;
-    case 'cairn': for (let i=0;i<4;i++) fp(wobble(DodecaG(0.2-i*0.035,0),0.1), mats.rock, 0,0.12+i*0.24,0, {s:[1,0.7,1]}); break;
+    case 'cairn': { CAIRN_GEO = CAIRN_GEO || wobble(DodecaG(1,1),0.13);   // each stone is laid on the one under it: its center goes up by the two half-thicknesses, less a little so the faces bed together
+      const stone = (r, flat, x, y, z, ry, tilt) => fp(CAIRN_GEO, mats.rock, x, y, z, {s:[r, r*flat, r*0.86], ry, rz:tilt || 0}), SINK = 0.88;
+      if (/\b(heap|pile)\b/i.test(((f && f.note) || '') + ' ' + ((f && f.id) || ''))){   // a heap: four flat stones on the ground, two laid across them, one on top
+        const hb = 0.13*0.36, hm = 0.12*0.36, ht = 0.1*0.36, yb = hb*SINK, ym = yb + (hb + hm)*SINK, yt = ym + (hm + ht)*SINK;
+        for (let i = 0; i < 4; i++){ const a = 0.6 + i*Math.PI/2; stone(0.13 - (i%2)*0.012, 0.36, Math.cos(a)*0.125, yb, Math.sin(a)*0.125, a*1.7, (i%2 ? -1 : 1)*0.05); }
+        stone(0.12, 0.36, -0.062, ym, 0.02, 0.4, 0.04); stone(0.115, 0.36, 0.068, ym, -0.025, 2.1, -0.04); stone(0.1, 0.36, 0.005, yt, 0.0, 1.2, 0.03);
+      } else {   // a tower of five flat stones, each smaller than the one below and a little off its center
+        let y = 0, hp = 0; for (let i = 0; i < 5; i++){ const r = 0.19 - i*0.026, h = r*0.4; y += i ? (hp + h)*SINK : h*SINK; stone(r, 0.4, ((i*37)%5 - 2)*0.006, y, ((i*53)%5 - 2)*0.006, i*1.9, ((i%3) - 1)*0.03); hp = h; }
+      } break; }
     case 'puddle': fp(new THREE.CircleGeometry(0.5,16), mats.water, 0,0.02,0, {rx:-Math.PI/2, cast:false}); break;
     default: fp(wobble(DodecaG(0.2,0),0.1), mats.rock, 0,0.12,0);
   }
@@ -4604,7 +4613,7 @@ function rebuildFeatures(){
   for (let i=OBST.length-1;i>=0;i--) if (OBST[i].feat) OBST.splice(i, 1);
   const {cell, min, n, grid, solid} = NAV.grid ? NAV : (navBuild(), NAV);
   for (const f of FEATURES){ if (!f || !f.id || !f.kind) continue;
-    const p = placeFeature(f), m = makeFeature(f.kind); if (f.kind === 'flat_stone' && /\bink\b/i.test((f.note || '') + ' ' + f.id)) addInkHollow(m); if (f.kind === 'lid' && /grease|\bfat\b|tallow|wick|lamp/i.test((f.note || '') + ' ' + f.id) && !/compass|needle|float/i.test(f.id)) fatLamp(m); m.position.set(p.x, p.onBench ? p.y : p.inPool ? pool.position.y - 0.08 : p.inCreek ? H(p.x, p.z) : Hm(p.x, p.z), p.z); m.rotation.y = featHash(f.id+'r')*6.283; m.userData.f = f; featGroup.add(m); FEAT[f.id] = {...p, f, yaw:m.rotation.y};
+    const p = placeFeature(f), m = makeFeature(f.kind, f); if (f.kind === 'flat_stone' && /\bink\b/i.test((f.note || '') + ' ' + f.id)) addInkHollow(m); if (f.kind === 'lid' && /grease|\bfat\b|tallow|wick|lamp/i.test((f.note || '') + ' ' + f.id) && !/compass|needle|float/i.test(f.id)) fatLamp(m); m.position.set(p.x, p.onBench ? p.y : p.inPool ? pool.position.y - 0.08 : p.inCreek ? H(p.x, p.z) : Hm(p.x, p.z), p.z); m.rotation.y = featHash(f.id+'r')*6.283; m.userData.f = f; featGroup.add(m); FEAT[f.id] = {...p, f, yaw:m.rotation.y};
     if (p.solid && f.kind.startsWith('fallen_log')){ const ax = Math.cos(m.rotation.y), az = -Math.sin(m.rotation.y), R = 0.6;   // the whole length of the log is solid, not just a circle at its middle
       const ci = Math.floor((p.x-min)/cell), cj = Math.floor((p.z-min)/cell), k = Math.ceil((1.6 + R)/cell);
       for (let dj=-k;dj<=k;dj++) for (let di=-k;di<=k;di++){ const i = ci+di, j = cj+dj; if (i<0||j<0||i>=n||j>=n) continue; const dx = min+(i+0.5)*cell-p.x, dz = min+(j+0.5)*cell-p.z, t = Math.max(-1.6, Math.min(1.6, dx*ax + dz*az));
