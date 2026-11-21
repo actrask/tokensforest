@@ -61,14 +61,17 @@ function promptFor(who, scene, clock) {
 // the maker's sketches, sent as extra reference images to models that take several images
 const SKETCHES = {
   token: ['sketches/token_portrait.jpg', 'sketches/token_turnaround.jpg'],
-  gage: ['sketches/gage_goggles.jpg', 'sketches/gage_turnaround.jpg'],
+  gage: ['sketches/gage_film_ref.jpg', 'sketches/gage_goggles.jpg', 'sketches/gage_turnaround.jpg'],
 };
-const REF_NOTE = ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of the character: match the character\'s head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.';
+const REF_NOTE = {
+  token: ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of Token: match his head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.',
+  gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, make him look exactly like he does in that photo (same face, head shape, goggles, hair, clothes, wooden shoes, skin and materials, same live-action finish). The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp or background, and do not copy the pencil style.',
+};
 
 // model choices; the page sends one of these keys (default first)
 const MODELS = {
   kontext: { url: 'https://fal.run/fal-ai/flux-pro/kontext', body: (img, aspect, prompt) => ({ prompt, image_url: img, aspect_ratio: aspect, guidance_scale: 4, output_format: 'jpeg', num_images: 1, safety_tolerance: '2' }) },
-  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', refs: true, body: (img, aspect, prompt, refs) => ({ prompt: refs.length ? prompt + REF_NOTE : prompt, image_urls: [img].concat(refs), aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
+  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', refs: true, body: (img, aspect, prompt, refs, refWho) => ({ prompt: refs.length ? prompt + (REF_NOTE[refWho] || '') : prompt, image_urls: [img].concat(refs), aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
   seedream: { url: 'https://fal.run/fal-ai/bytedance/seedream/v4/edit', body: (img, aspect, prompt) => ({ prompt, image_urls: [img], image_size: 'auto_2K', num_images: 1 }) },
 };
 
@@ -128,7 +131,7 @@ async function handle({ request, env }) {
   const r = await fetch(m.url, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock), m.refs ? (SKETCHES[body.who] || []).map(f => new URL('/' + f, request.url).href) : [])),
+    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock), m.refs ? (SKETCHES[body.who] || []).map(f => new URL('/' + f, request.url).href) : [], body.who)),
   });
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
