@@ -31,7 +31,8 @@ const CHARACTER_NOTES =
   'with subtle pores and natural color, never brass, metal, bronze, plastic or wood. His spiky hair is real hair, not metal spikes. ' +
   'Only his goggles, buckles and tools are metal; his clothes are real cloth and leather. ' +
   'Token is a small, gentle forest creature of his own kind, not a bear, animal, robot, alien or person: a large, perfectly round, smooth head; ' +
-  'two big teardrop-shaped eyes with warm brown irises and soft highlights, set low on the face (closed, with heavy lids, when he sleeps); ' +
+  'two very large teardrop-shaped eyes, each about a quarter of the width of his face, the rounded end low and the soft point rising toward the inner brow, ' +
+  'glossy and dark with warm brown irises and soft highlights; when he sleeps the closed lids keep that same large teardrop outline, never small human slits; ' +
   'no ears, no fur, no hair, no visible nose; smooth, pale, softly matte living skin; a thin neck; a small rounded shell on his back like a turtle\'s; ' +
   'slender arms and legs; large, flat, rounded feet; often a long slender pale-wood staff. When he is in bed, only his round smooth head shows above the blankets.';
 
@@ -44,10 +45,17 @@ function promptFor(who, scene, clock) {
   return lead + ctx + PROMPT + ' ' + CHARACTER_NOTES;
 }
 
+// the maker's sketches, sent as extra reference images to models that take several images
+const SKETCHES = {
+  token: ['sketches/token_portrait.jpg', 'sketches/token_turnaround.jpg'],
+  gage: ['sketches/gage_goggles.jpg', 'sketches/gage_turnaround.jpg'],
+};
+const REF_NOTE = ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of the character: match the character\'s head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.';
+
 // model choices; the page sends one of these keys (default first)
 const MODELS = {
   kontext: { url: 'https://fal.run/fal-ai/flux-pro/kontext', body: (img, aspect, prompt) => ({ prompt, image_url: img, aspect_ratio: aspect, guidance_scale: 4, output_format: 'jpeg', num_images: 1, safety_tolerance: '2' }) },
-  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', body: (img, aspect, prompt) => ({ prompt, image_urls: [img], aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
+  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', refs: true, body: (img, aspect, prompt, refs) => ({ prompt: refs.length ? prompt + REF_NOTE : prompt, image_urls: [img].concat(refs), aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
   seedream: { url: 'https://fal.run/fal-ai/bytedance/seedream/v4/edit', body: (img, aspect, prompt) => ({ prompt, image_urls: [img], image_size: 'auto_2K', num_images: 1 }) },
 };
 
@@ -99,7 +107,7 @@ async function handle({ request, env }) {
   const r = await fetch(m.url, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock))),
+    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock), m.refs ? (SKETCHES[body.who] || []).map(f => new URL('/' + f, request.url).href) : [])),
   });
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
