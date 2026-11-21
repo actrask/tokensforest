@@ -1,0 +1,43 @@
+name: Photoreal frame
+
+# Manual for now: converts one image already in the repo into a photoreal still
+# with fal.ai Flux Kontext Pro, and commits the result next to it.
+# Needs the repository secret FAL_KEY.
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Image in the repo to convert'
+        default: 'photoreal/test/input.jpg'
+      aspect:
+        description: 'Output aspect ratio'
+        default: '4:3'
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install fal-client
+      - name: Render
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+        run: |
+          src="${{ inputs.source }}"
+          out="$(dirname "$src")/photoreal-$(date -u +%Y%m%d-%H%M%S).jpg"
+          python3 tools/photoreal_render.py "$src" "$out" --aspect "${{ inputs.aspect }}"
+          echo "OUT=$out" >> "$GITHUB_ENV"
+      - name: Commit result
+        run: |
+          git config user.name "Token's Forest photoreal"
+          git config user.email "actions@users.noreply.github.com"
+          git add photoreal
+          git commit -m "Photoreal frame: $OUT"
+          git pull --rebase origin main
+          git push
