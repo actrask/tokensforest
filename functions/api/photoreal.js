@@ -1,6 +1,6 @@
 // Cloudflare Pages Function: POST /api/photoreal
 // Takes a JPEG frame from the page and returns a photoreal re-render from
-// fal.ai (Nano Banana Pro by default; Flux Kontext Pro and Seedream also wired in). The fal key stays here on the server, never in the page.
+// fal.ai (Seedream by default; Nano Banana Pro and Flux Kontext Pro also wired in). The fal key stays here on the server, never in the page.
 //
 // Settings in the Cloudflare Pages project (Settings > Variables and Secrets / Bindings):
 //   FAL_KEY      secret, your fal.ai API key (required)
@@ -119,7 +119,7 @@ async function handle({ request, env }) {
     env.PHOTO_KV.put(ipKey, String(ipN + 1), { expirationTtl: 172800 }),
   ]);
 
-  const model = MODELS[body.model] ? body.model : 'nanopro';
+  const model = MODELS[body.model] ? body.model : 'seedream';
   const m = MODELS[model];
   const r = await fetch(m.url, {
     method: 'POST',
