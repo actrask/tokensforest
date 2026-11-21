@@ -14,6 +14,7 @@ const PROMPT =
   'rebuild everything as real, life-size physical things in a real ancient forest of towering redwood-like trunks with deeply furrowed bark. ' +
   'It must look like a genuine pinhole photograph: soft all over with no sharp focus anywhere, gentle glow around bright areas, strong dark vignetting toward the corners, ' +
   'warm sepia-brown monochrome like an old paper print, fine grain, slight unevenness of a hand-developed sheet. Anything soft or smeared in the frame stays soft or smeared. ' +
+  'Everything is life-size and real, photographed on location: never a toy, figurine, doll, model, miniature, diorama or clay look, and never a cute cartoon proportion. ' +
   'Match the light and time of day in the frame. Do not add or remove any person, creature or object, no text, no border, no frame, no outlines, no illustration or cartoon look. ' +
   'If Gage appears (a youthful tinkerer with big round brass goggles and stiff spiky hair, wooden clogs), he is a real young person; ' +
   'if Token appears (a small gentle creature with a large round smooth head, two very large dark teardrop eyes, a small turtle-like shell, slender limbs, no fur), he is a real living creature of his own kind.';
