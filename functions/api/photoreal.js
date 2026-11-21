@@ -11,7 +11,7 @@
 
 const PROMPT =
   'Turn this frame into a cinematic, photoreal film still, as if shot on location with an ARRI Alexa and a 35mm anamorphic lens. ' +
-  'Keep the same scene, the same characters and props, and roughly the same camera position and layout, but relight and rebuild everything as real, life-size physical objects. ' +
+  'Keep the exact same framing, camera angle, lens and composition, the same characters in the same poses and positions, and every prop in place; only relight and rebuild everything as real, life-size physical objects. ' +
   'The giant trees are towering ancient redwood trunks with deeply furrowed, weathered bark, dwarfing the camp. ' +
   'Each character is a life-size handcrafted being, not a toy or miniature: keep its exact silhouette, design, proportions, colors and face, ' +
   'rendered in real materials such as aged brass, worn leather, cloth and wood. ' +
@@ -98,7 +98,18 @@ async function handle({ request, env }) {
   const out = await r.json();
   const url = out && out.images && out.images[0] && out.images[0].url;
   if (!url) return json({ error: 'The photo did not develop. Try again in a moment.' }, 424);
-  return json({ url, model, left: Math.max(0, ipMax - ipN - 1) });
+  // keep a copy here so the photo outlives the model's temporary link
+  let saved = url, id = '';
+  try {
+    const got = await fetch(url);
+    if (got.ok) {
+      const buf = await got.arrayBuffer();
+      id = day.replace(/-/g, '') + '-' + crypto.randomUUID().slice(0, 12);
+      await env.PHOTO_KV.put('img:' + id, buf, { metadata: { who: body.who || '', model, at: new Date().toISOString() } });
+      saved = '/api/photo/' + id + '.jpg';
+    }
+  } catch (e) { console.log('photo save failed', e && e.message); }
+  return json({ url: saved, id, model, left: Math.max(0, ipMax - ipN - 1) });
 }
 
 export function onRequest() {

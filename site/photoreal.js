@@ -18,7 +18,16 @@
     '#photoBtn{position:fixed;right:132px;bottom:16px;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:opacity .6s}' +
     '#photoBtn svg{width:21px;height:21px;display:block}' +
     'body.cine #photoBtn{opacity:0;pointer-events:none}' +
-    '@media (max-width:640px){#photoBtn{right:120px;bottom:104px}}';
+    '@media (max-width:640px){#photoBtn{right:120px;bottom:104px}}' +
+    '#galleryBtn{position:fixed;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:none;align-items:center;justify-content:center;transition:opacity .6s}' +
+    '#galleryBtn.has{display:flex} #galleryBtn svg{width:20px;height:20px;display:block}' +
+    'body.cine #galleryBtn{opacity:0;pointer-events:none}' +
+    '#prGal{position:fixed;inset:0;z-index:49;background:rgba(12,10,8,.92);display:none;flex-direction:column;padding:16px;box-sizing:border-box}' +
+    '#prGal.on{display:flex} #prGal h3{color:#f4ead8;font:600 17px system-ui,sans-serif;margin:4px 4px 12px}' +
+    '#prGrid{flex:1;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-content:start}' +
+    '#prGrid figure{margin:0;cursor:pointer} #prGrid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;display:block;background:#222}' +
+    '#prGrid figcaption{color:#cbbfa8;font:12px system-ui,sans-serif;margin-top:4px}' +
+    '#prGalBar{display:flex;justify-content:center;padding-top:12px}';
   document.head.appendChild(css);
 
   function el(tag, attrs, html){ var e = document.createElement(tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (html) e.innerHTML = html; return e; }
@@ -33,7 +42,11 @@
   shade.appendChild(frame); shade.appendChild(bar);
 
   var original = '', photo = '', showing = 'photo';
-  function setButtons(){ bCompare.style.display = bSave.style.display = photo ? '' : 'none'; }
+  var KEY = 'forestPhotos';
+  function loadList(){ try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function saveList(l){ try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 300))); } catch (e) {} }
+  function remember(p){ var l = loadList(); l.unshift(p); saveList(l); refreshGalleryBtn(); }
+  function setButtons(){ bSave.style.display = photo ? '' : 'none'; bCompare.style.display = (photo && original) ? '' : 'none'; }
   bClose.onclick = function(){ shade.classList.remove('on'); };
   bCompare.onclick = function(){ showing = showing === 'photo' ? 'orig' : 'photo'; img.src = showing === 'photo' ? photo : original; bCompare.textContent = showing === 'photo' ? 'Show original' : 'Show photo'; };
   bSave.onclick = function(){
@@ -42,6 +55,25 @@
   };
 
   function whoNow(){ var b = document.querySelector('#who button.on'); return b && b.dataset.w || ''; }
+
+  var gal = el('div', {id:'prGal'}), galTitle = el('h3', {}, 'Your forest photos'), grid = el('div', {id:'prGrid'}), galBar = el('div', {id:'prGalBar'});
+  var bGalClose = el('button', {'class':'btn'}, 'Close'); galBar.appendChild(bGalClose);
+  gal.appendChild(galTitle); gal.appendChild(grid); gal.appendChild(galBar);
+  bGalClose.onclick = function(){ gal.classList.remove('on'); };
+  var galBtn;
+  function refreshGalleryBtn(){ if (galBtn) galBtn.classList.toggle('has', loadList().length > 0); }
+  function openGallery(){
+    grid.innerHTML = '';
+    loadList().forEach(function(p){
+      var f = el('figure'), im = el('img', {loading:'lazy', alt:'Forest photo'}), cap = el('figcaption');
+      im.src = p.url; im.onerror = function(){ f.style.display = 'none'; };
+      var d = new Date(p.at); cap.textContent = (p.who ? p.who.charAt(0).toUpperCase() + p.who.slice(1) + ' · ' : '') + d.toLocaleDateString(undefined, {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+      f.appendChild(im); f.appendChild(cap);
+      f.onclick = function(){ photo = p.url; original = ''; showing = 'photo'; img.src = p.url; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons(); shade.classList.add('on'); };
+      grid.appendChild(f);
+    });
+    gal.classList.add('on');
+  }
 
   // grab the canvas right after the page has drawn the next frame
   function grab(){
@@ -65,10 +97,12 @@
       return fetch('/api/photoreal', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image: g.data, aspect: g.aspect, who: whoNow()})})
         .then(function(r){ return r.json().catch(function(){ return {error:'The photo did not develop.'}; }); })
         .then(function(j){
+          if (j.url && j.url.charAt(0) === '/') j.url = location.origin + j.url;
           if (!j.url) throw new Error(j.error || 'The photo did not develop.');
           return new Promise(function(res, rej){ var p = new Image(); p.onload = function(){ res(j.url); }; p.onerror = function(){ rej(new Error('The photo did not load.')); }; p.src = j.url; });
         })
-        .then(function(u){ photo = u; img.src = u; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons(); });
+        .then(function(u){ photo = u; img.src = u; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons();
+          remember({url: u, who: whoNow(), at: new Date().toISOString()}); });
     }).catch(function(e){ frame.classList.add('dev'); msg.textContent = e.message || 'The photo did not develop.'; msg.style.display = 'flex'; })
       .then(function(){ busy = false; });
   }
@@ -79,9 +113,15 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>');
     b.addEventListener('click', function(e){ e.stopPropagation(); shoot(); });
     document.body.appendChild(b);
+    document.body.appendChild(gal);
+    galBtn = el('button', {'class':'btn', id:'galleryBtn', title:'Your photos', 'aria-label':'See your previous photos'},
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>');
+    galBtn.addEventListener('click', function(e){ e.stopPropagation(); openGallery(); });
+    document.body.appendChild(galBtn); refreshGalleryBtn();
     // sit just left of the Menu button, whatever its width
     function place(){ var m = document.getElementById('menuBtn'); if (!m) return; var r = m.getBoundingClientRect(); if (!r.width) return;
-      b.style.right = (window.innerWidth - r.left + 10) + 'px'; b.style.bottom = (window.innerHeight - r.bottom + (r.height - 42) / 2) + 'px'; }
+      var bot = (window.innerHeight - r.bottom + (r.height - 42) / 2) + 'px', right = window.innerWidth - r.left + 10;
+      b.style.right = right + 'px'; b.style.bottom = bot; galBtn.style.right = (right + 52) + 'px'; galBtn.style.bottom = bot; }
     place(); window.addEventListener('resize', place); setInterval(place, 2000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
