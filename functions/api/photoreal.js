@@ -1,6 +1,6 @@
 // Cloudflare Pages Function: POST /api/photoreal
 // Takes a JPEG frame from the page and returns a photoreal re-render from
-// fal.ai Flux Kontext Pro. The fal key stays here on the server, never in the page.
+// fal.ai (Nano Banana Pro by default; Flux Kontext Pro and Seedream also wired in). The fal key stays here on the server, never in the page.
 //
 // Settings in the Cloudflare Pages project (Settings > Variables and Secrets / Bindings):
 //   FAL_KEY      secret, your fal.ai API key (required)
@@ -9,16 +9,23 @@
 //   DAILY_LIMIT  optional, photos per day for the whole site (default 25)
 //   IP_LIMIT     optional, photos per day per visitor (default 5)
 
-const MODEL_URL = 'https://fal.run/fal-ai/flux-pro/kontext';
-
 const PROMPT =
-  'Re-render this exact scene as a real photograph. Keep the composition, camera angle, ' +
-  'framing and every object exactly where it is. Keep each character\'s design, shape, ' +
-  'proportions, colors and face exactly as drawn, rendered as real physical materials. ' +
-  'Replace the ink outlines and crosshatching with true photographic materials: real tree bark, ' +
-  'wet river stones, moving water with natural reflections, canvas, weathered wood, metal, ' +
-  'grass and ferns. Natural light with soft atmospheric haze, shot on a 35mm lens at f/2.8, ' +
-  'natural color grading, shallow depth of field. No outlines, no hatching, no illustration or cartoon style.';
+  'Turn this frame into a cinematic, photoreal film still, as if shot on location with an ARRI Alexa and a 35mm anamorphic lens. ' +
+  'Keep the same scene, the same characters and props, and roughly the same camera position and layout, but relight and rebuild everything as real, life-size physical objects. ' +
+  'The giant trees are towering ancient redwood trunks with deeply furrowed, weathered bark, dwarfing the camp. ' +
+  'Each character is a life-size handcrafted being, not a toy or miniature: keep its exact silhouette, design, proportions, colors and face, ' +
+  'rendered in real materials such as aged brass, worn leather, cloth and wood. ' +
+  'Golden-hour sunlight low in the sky, raking through the trees with volumetric god rays and a soft lens flare, warm rim light on every edge, ' +
+  'drifting haze and dust in the air, the campfire and lantern glowing warmly. Real wet stones and moving water with natural reflections, ' +
+  'wild grass and ferns. Low camera, shallow depth of field with soft foreground bokeh, rich natural color grading, high dynamic range. ' +
+  'Absolutely no outlines, ink lines, crosshatching, illustration, cartoon, clay or miniature look.';
+
+// model choices; the page sends one of these keys (default first)
+const MODELS = {
+  kontext: { url: 'https://fal.run/fal-ai/flux-pro/kontext', body: (img, aspect) => ({ prompt: PROMPT, image_url: img, aspect_ratio: aspect, guidance_scale: 4, output_format: 'jpeg', num_images: 1, safety_tolerance: '2' }) },
+  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', body: (img, aspect) => ({ prompt: PROMPT, image_urls: [img], aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
+  seedream: { url: 'https://fal.run/fal-ai/bytedance/seedream/v4/edit', body: (img, aspect) => ({ prompt: PROMPT, image_urls: [img], image_size: 'auto_2K', num_images: 1 }) },
+};
 
 const ASPECTS = ['21:9', '16:9', '4:3', '3:2', '1:1', '2:3', '3:4', '9:16', '9:21'];
 
@@ -63,10 +70,12 @@ async function handle({ request, env }) {
     env.PHOTO_KV.put(ipKey, String(ipN + 1), { expirationTtl: 172800 }),
   ]);
 
-  const r = await fetch(MODEL_URL, {
+  const model = MODELS[body.model] ? body.model : 'nanopro';
+  const m = MODELS[model];
+  const r = await fetch(m.url, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: PROMPT, image_url: image, aspect_ratio: aspect, guidance_scale: 3.5, output_format: 'jpeg', num_images: 1, safety_tolerance: '2' }),
+    body: JSON.stringify(m.body(image, aspect)),
   });
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
@@ -76,7 +85,7 @@ async function handle({ request, env }) {
   const out = await r.json();
   const url = out && out.images && out.images[0] && out.images[0].url;
   if (!url) return json({ error: 'The photo did not develop. Try again in a moment.' }, 424);
-  return json({ url, left: Math.max(0, ipMax - ipN - 1) });
+  return json({ url, model, left: Math.max(0, ipMax - ipN - 1) });
 }
 
 export function onRequest() {
