@@ -19,8 +19,12 @@ const PROMPT =
   'with the camera at the character\'s eye level and minor clutter left out. ' +
   'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
   'and never add vehicles, boats or new furniture. ' +
-  'Scale: everything is full-size and filmed at full scale. The characters are living beings, never dolls, puppets, figurines or toys: ' +
-  'render them the way a top VFX studio renders a digital creature in a live-action film, with real skin, real fabric, weight, and natural light on them. ' +
+  'Realism is for the world, the light and the materials, not the character designs. The characters keep their stylized designs exactly as drawn: ' +
+  'the same exaggerated proportions, head size, eye or goggle size, hair shape and body shape as in the frame and the maker\'s sketches. ' +
+  'Never turn them into realistic humans, human children or animals, and never into dolls, puppets, figurines or toys. ' +
+  'Render them the way a top VFX studio brings a stylized character into a live-action film (like Paddington or Detective Pikachu): ' +
+  'the design untouched, but with real, physically convincing skin, fabric, metal and wood, weight, contact shadows and natural light on them. ' +
+  'Everything is filmed at full scale. ' +
   'Normal cinema depth of field for a full-size scene, background softly out of focus; never macro, tilt-shift, diorama or miniature-looking. ' +
   'Light: naturalistic and motivated, with real contrast and deep shadows. Outdoors by day, soft directional sunlight filtered through the canopy, ' +
   'gentle haze in the distance; do not put a sunburst or starburst in the frame and do not make light glow. At night or indoors, warm firelight, lantern ' +
@@ -33,11 +37,11 @@ const PROMPT =
 
 // art notes per character, applied whenever they could be in the frame
 const CHARACTER_NOTES =
-  'Character notes: Gage (the tinkerer with large round brass goggles and spiky hair) is young and youthful: a fresh, smooth, boyish face with no wrinkles, ' +
-  'no age lines, no sagging, bright wide eyes and soft rounded features, never old or elderly. His face, head, neck, arms and hands are real, natural, healthy young skin ' +
-  'with subtle pores and natural color, never brass, metal, bronze, plastic or wood. His hair is real hair, stiff and styled into sharp, separate, pointed spikes that stand straight out all around his head, never soft, fluffy or messy, and never metal. ' +
-  'His goggle lenses are smoked, darkly tinted glass, his eyes only faintly visible behind them. ' +
-  'His shoes are carved from smooth, solid wood, like large rounded wooden clogs with visible wood grain, never bare feet, cloth or leather. ' +
+  'Character notes: Gage is a stylized young tinkerer, not a realistic human boy. His design: an oversized, round head about as large as his whole torso; ' +
+  'huge round brass-framed goggles with smoked, darkly tinted lenses covering most of his face, his eyes only faintly visible behind them; ' +
+  'a few large, sharp, dramatic spikes of hair swept up and back from his head, stiff and pointed, real hair but never a soft or messy mop; ' +
+  'a small face with a small nose and mouth, smooth young skin with no wrinkles; a small, slender body with thin arms and legs; ' +
+  'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
   'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ' +
   'Token is a small, gentle forest creature of his own kind, not a bear, animal, robot, alien or person: a large, perfectly round, smooth head; ' +
   'two very large teardrop-shaped eyes, each about a quarter of the width of his face, the rounded end low and the soft point rising toward the inner brow, ' +
