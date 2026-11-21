@@ -14,9 +14,11 @@
 const PROMPT =
   'Turn this frame into a single still from a major live-action feature film, photographed on location by a world-class cinematographer ' +
   '(Roger Deakins, Emmanuel Lubezki) on an ARRI Alexa with anamorphic lenses. It must look like a real photograph of a real place, not CG, not animation. ' +
-  'Keep the same place, the same characters with their exact designs and what they are doing, and the key props that tell the story ' +
-  '(shelter, fire, lantern, workbench, bed). Keep the general viewpoint and the characters\' poses; you may recompose slightly the way a cinematographer would, ' +
-  'with the camera at the character\'s eye level and minor clutter left out. ' +
+  'COMPOSITION IS LOCKED: this is a re-render of the exact same shot, as if the same 3D scene were rendered again by a film-quality renderer. ' +
+  'Keep the identical camera position, height, angle, lens and crop; the same horizon line; every object, character, tree, rock, doorway and prop ' +
+  'in the same place in the frame at the same size, with the same silhouette and the same amount of empty space around it. ' +
+  'Do not reframe, zoom in, center, enlarge or move the subject closer, do not change the aspect of any object, and do not add or leave out props. ' +
+  'If a character is small or far away in the frame, it stays small and far away. ' +
   'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
   'and never add vehicles, boats or new furniture. ' +
   'Realism is for the world, the light and the materials, not the character designs. The characters keep their stylized designs exactly as drawn: ' +
