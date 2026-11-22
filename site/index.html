@@ -212,7 +212,7 @@
   <div id="pane"></div>
 </div>
 
-<script src="world-loader.js?v=11"></script>
+<script src="world-loader.js?v=12"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -4898,7 +4898,7 @@ setTimeout(() => { const b = document.createElement('button'); b.className = 'bt
     PHO.q = L.filter(p => !PHO.img[id + '|' + p.id]).map(p => ({who:id, p})); photoPaint(); photoNext(); }; }, 1500);
 /* "Watch previous days": every earlier day the narrator has told, newest first, each with its own play button. Sits right under the watch button. */
 setTimeout(() => { const b = document.createElement('button'); b.className = 'btn light'; b.id = 'prevBtn'; b.textContent = 'Watch previous days'; const bs = document.getElementById('btns'), sb = document.getElementById('storyBtn'); if (!bs || !sb) return; bs.insertBefore(b, sb.nextSibling);
-  b.onclick = () => { const NMc = CH[ACTIVE].name, card = readCard.firstElementChild, N = CH[ACTIVE].NARR || {}, today = new Date().toLocaleDateString('en-CA'), days = Object.keys(N).filter(d => N[d] && N[d].text && d !== today).sort().reverse();
+  b.onclick = () => { const NMc = CH[ACTIVE].name, card = readCard.firstElementChild, N = CH[ACTIVE].NARR || {}, today = new Date().toLocaleDateString('en-CA'), days = Object.keys(N).filter(d => N[d] && N[d].text && d !== today && AUD.has(ACTIVE + '-' + d + '-' + fnv(N[d].text.trim()))).sort().reverse();
     card.classList.add('big');
     card.innerHTML = `<div style="font:700 35px Gaegu;margin:0 0 10px">${esc(NMc)}'s earlier days</div>` +
       (days.length ? days.map(d => `<div style="margin:14px 0 6px"><span style="opacity:.65;font-size:17px">${esc(fmtDay(Date.parse(d + 'T12:00:00')))}</span><br>${esc((N[d].text.match(/^.*?[.!?](\s|$)/) || [N[d].text])[0].trim())}<br><button class="btn pd" data-d="${esc(d)}" style="margin-top:8px">▶ Watch this day</button></div>`).join('')
@@ -5054,7 +5054,7 @@ function narrVoice(){ const vs = window.speechSynthesis.getVoices() || [], en = 
   return en.find(v => /Daniel|Arthur|Oliver|Malcolm|UK English Male|Ryan|George|Thomas/i.test(v.name)) || en.find(v => /^en[-_]GB/i.test(v.lang)) || en[0] || null; }
 /* Listening: the logbook closes and each sentence plays over a replay of the moment it describes. The narrator's own beats ({s, at}) say which moment; without them the page matches each sentence to the day's moves by shared words, in order. */
 const NARR = {on:false, key:null, us:[], sents:[], times:[], day:''};
-/* the narrator's voice is a recording: one file per day's telling, named by a hash of its exact words (audio/<who>-<day>-<hash>.mp3, with sentence start times beside it in a .json). A telling with no recording yet falls back to the device's own voice */
+/* the narrator's voice is a recording: one file per day's telling, named by a hash of its exact words (audio/<who>-<day>-<hash>.mp3, with sentence start times beside it in a .json). A telling with no recording yet is not played: the day waits for its recording */
 const NAUD = new Audio(); NAUD.preload = 'auto'; const AUD = new Map(), AUDQ = new Set(), NOAUD = new Set();
 const fnv = s => { let h = 0x811c9dc5; for (const b of new TextEncoder().encode(s)) h = Math.imul(h ^ b, 0x01000193) >>> 0; return ('0000000' + h.toString(16)).slice(-8); };
 function audWant(who, day, text){ const k = who + '-' + day + '-' + fnv(text.trim()); if (AUDQ.has(k)) return; AUDQ.add(k);
@@ -5080,18 +5080,18 @@ function narrBeat(n){ if (!NARR.on) return; let T = NARR.times[n]; for (let q=n;
   if (RP.on && RP.narr && RP.it === r.tl[r.i] && performance.now() - RP.t0 < 36000){ if (performance.now() - CUTS.last > 3200){ CUTS.last = performance.now(); DIR.until = Math.min(DIR.until || 0, performance.now()/1000 + 0.9); } return; }   // (and never a new angle within three seconds of the last cut: a shot needs time to be read)   // same moment as the last sentence: stay in it, just change the angle
   startReplay({at:new Date(T).toISOString(), title:'', text:''}, true); }
 function narrStop(){ if (!NARR.on) return; NARR.on = false; NARR.us = []; SAYKEY = null; try { window.speechSynthesis.cancel(); } catch (e) {} try { NAUD.pause(); } catch (e) {} if (RP.on && RP.narr) stopReplay(); renderPane(); }
-function narrate(key, text){ const S = window.speechSynthesis; if (!S || typeof SpeechSynthesisUtterance === 'undefined'){ SAYKEY = 'none'; renderPane(); return; }
+function narrate(key, text){ const S = window.speechSynthesis || {cancel(){}, speak(){}};   // (the narrator is only ever the recorded voice: the device's own voice is never used)
   const stop = SAYKEY === key; NARR.on = false; S.cancel(); try { NAUD.pause(); } catch (e) {} SAYKEY = null; SAYMSG = ''; if (RP.on && RP.narr) stopReplay();
   if (!stop){ const day = key.split('|')[1], v = narrVoice(); let started = false;
     const plan = narrPlan(day, text, ((CH[ACTIVE].NARR || {})[day] || {}).beats); Object.assign(NARR, {on:true, key, day, sents:plan.sents, times:plan.times, us:[]});
     if (!DIARY[day] && window.__dayDoc) window.__dayDoc(ACTIVE, day, () => { if (NARR.on && NARR.key === key){ const p = narrPlan(day, text, ((CH[ACTIVE].NARR || {})[day] || {}).beats); if (p.sents.length === NARR.sents.length) NARR.times = p.times; } });   // an older day: fetch its moments while the first sentence plays
     const ak = ACTIVE + '-' + day + '-' + fnv(text.trim());
-    if (!NOAUD.has(ak)){ const A = NAUD, M = AUD.get(ak); let cur = -1, T = M && M.t && M.t.length === plan.sents.length ? M.t : null;
+    NOAUD.delete(ak); { const A = NAUD, M = AUD.get(ak); let cur = -1, T = M && M.t && M.t.length === plan.sents.length ? M.t : null;
       const done = msg => { narrStop(); if (msg) SAYMSG = msg; document.getElementById('diary').classList.add('open'); renderPane(); };
       A.onloadedmetadata = () => { if (!T && isFinite(A.duration)){ const tot = plan.sents.reduce((a, x) => a + x.length + 8, 0); let acc = 0; T = plan.sents.map(x => { const v = A.duration*acc/tot; acc += x.length + 8; return v; }); } };   // no timings file: place the sentences by their length
       A.ontimeupdate = () => { if (SAYKEY !== key || !T) return; let i = 0; while (i + 1 < T.length && T[i + 1] <= A.currentTime + 0.05) i++; if (i !== cur){ cur = i; narrBeat(i); } };
       A.onended = () => { if (SAYKEY === key) done(''); };
-      A.onerror = () => { NOAUD.add(ak); if (SAYKEY === key) done('This telling has not been recorded yet. Tap again to hear it in your device\'s own voice.'); };
+      A.onerror = () => { NOAUD.add(ak); if (SAYKEY === key) done('This day is still being recorded. The narrator records each day overnight.'); };
       A.src = 'audio/' + ak + '.mp3'; SAYKEY = key; document.getElementById('diary').classList.remove('open');
       const pr = A.play(); if (pr && pr.catch) pr.catch(() => { if (SAYKEY === key && !NOAUD.has(ak)) done('The recording could not start. Tap again.'); });
       narrBeat(0); renderPane(); return; }
@@ -5377,11 +5377,16 @@ soundBtn.onclick = async () => { try { const v = await Sound.toggle(); soundBtn.
 document.getElementById('rpBack').onclick = () => stopReplay();
 /* the day's story, front and center: one tap plays the narrator's telling of the latest day over replays of what happened */
 { const sb = document.getElementById('storyBtn');
-  const latest = () => { const N = CH[ACTIVE].NARR || {}, d = Object.keys(N).filter(k => N[k] && N[k].text).sort().pop(); return d ? {d, text:N[d].text} : null; };
+  const latest = () => { const N = CH[ACTIVE].NARR || {}, d = Object.keys(N).filter(k => N[k] && N[k].text && AUD.has(ACTIVE + '-' + k + '-' + fnv(N[k].text.trim()))).sort().pop(); return d ? {d, text:N[d].text} : null; };   // only a day whose recording is ready
   sb.onclick = () => { if (NARR.on){ narrStop(); return; } const L = latest();
     if (!L || SAYKEY === 'none'){ document.getElementById('diary').classList.add('open'); tab = 'stories'; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.t === 'stories')); renderPane(); return; }
     narrate(ACTIVE + '|' + L.d, L.text); };
   setInterval(() => { const L = latest(), today = L && L.d === new Date().toLocaleDateString('en-CA'); { const N = CH[ACTIVE].NARR || {}; for (const d in N) if (N[d] && N[d].text) audWant(ACTIVE, d, N[d].text); } const txt = NARR.on ? '■ Stop the story' : L ? (today ? '▶ Watch his day so far' : '▶ Watch his last day') : '▶ His story'; if (sb.textContent !== txt) sb.textContent = txt; }, 600); }
+/* hooks for the presentation layer (present.js): play a recorded day, stop, where the telling is, and a straight jump to a moment */
+window.__forest = { who:() => ACTIVE, setWho:id => setActive(id), days:who => (CH[who] && CH[who].NARR) || {}, fnv,
+  play:(who, day) => { if (ACTIVE !== who) setActive(who); const N = CH[who].NARR || {}; if (!N[day] || !N[day].text) return false; if (NARR.on) narrStop(); narrate(who + '|' + day, N[day].text); return true; },
+  stop:() => narrStop(), on:() => NARR.on, time:() => NAUD.currentTime, audio:NAUD, sents:() => NARR.sents.slice(),
+  moment:(who, iso) => { if (ACTIVE !== who) setActive(who); startReplayNow({at:iso, title:'', text:''}, true); } };
 const peekBtn = document.getElementById('peekBtn');
 const exploreBtn = document.getElementById('exploreBtn');
 exploreBtn.onclick = () => {

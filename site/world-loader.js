@@ -9,7 +9,8 @@
   var DATA = {docs:{}}, subs = [], stamp = '';
   var LIVE = 'https://raw.githubusercontent.com/actrask/tokensforest/main/site/world.json';
   function grab(u){ return fetch(u + '?t=' + Math.floor(Date.now()/600000), {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){ return j && j.docs ? j : null; }).catch(function(){ return null; }); }
-  function load(){ return grab('/api/world').then(function(j){ return j || grab(LIVE); }).then(function(j){ return j || grab('world.json'); }).then(function(j){
+  var FILM = (function(){ try { var m = /[?&]w=([\w.-]+)/.exec(document.currentScript.src); return m ? m[1] : null; } catch (e) { return null; } })();   // the film tool loads one exact snapshot
+  function load(){ return (FILM ? grab(FILM) : grab('/api/world').then(function(j){ return j || grab(LIVE); }).then(function(j){ return j || grab('world.json'); })).then(function(j){
       if (!j || !j.docs) return false; var s = j.exportedAt || JSON.stringify(j).length + ''; if (s === stamp) return false; stamp = s; DATA = j; try { showAsOf(); } catch (e) {} return true; }).catch(function(){ return false; }); }
   function docSnap(p){ var d = DATA.docs[p]; return {exists: !!d, id: p.split('/').pop(), data: function(){ return d; }, metadata: {fromCache:false}}; }
   function colSnap(p, order, lim){ var items = Object.keys(DATA.docs).filter(function(k){ return k.indexOf(p + '/') === 0 && k.split('/').length === 2; }).map(function(k){ var v = DATA.docs[k]; return {id: k.split('/')[1], data: function(){ return v; }}; });
@@ -44,6 +45,7 @@
   var st = document.createElement('style'); st.textContent = '#openNote,#exportBtn{display:none!important} #welcome .hero{display:block;margin:0 auto 10px;max-height:34vh;max-width:100%;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.25)}'; document.head.appendChild(st);
   var nt = document.createElement('script'); nt.src = 'notes.js?v=1'; nt.defer = true; document.head.appendChild(nt);   // Cam's notes (owner devices only)
   var lt = document.createElement('script'); lt.src = 'letters.js?v=1'; lt.defer = true; document.head.appendChild(lt);   // notes from visitors: read by anyone, written after a Google sign-in, approved by the keeper
+  var ps = document.createElement('script'); ps.src = 'present.js?v=1'; ps.defer = true; document.head.appendChild(ps);   // presentation mode (the default view)
   var pr = document.createElement('script'); pr.src = 'photoreal.js?v=8'; pr.defer = true; document.head.appendChild(pr);   // the camera button (public site only)
   document.addEventListener('DOMContentLoaded', function(){ var c = document.querySelector('#welcome .card'); if (!c || c.querySelector('.hero')) return; var im = new Image(); im.className = 'hero'; im.alt = "Pencil drawing of Token walking through the forest with his staff and bundle"; im.src = 'hero.jpg'; c.insertBefore(im, c.firstChild); });
 })();
