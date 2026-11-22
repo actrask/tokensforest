@@ -9,5 +9,13 @@ window.addEventListener('message', function(e){
     .then(function(){ s.textContent = 'Message received and logged on tokensforest.com. You can close this window.'; try { e.source.postMessage({ack: true}, '*'); } catch (err) {} })
     .catch(function(err){ s.textContent = 'Got the message but could not log it: ' + err.message; });
 });
+// link test: data arrives in the address after #
+(function(){ var h = location.hash.slice(1); if (!h) return; var m = h.match(/^n=(\d+)&c=([0-9a-f]+)&d=(.*)$/); var s = document.getElementById('s');
+  if (!m) { s.textContent = 'Link opened, but the data did not arrive in the expected form (' + h.length + ' characters).'; return; }
+  var d = m[3], sum = 0; for (var i = 0; i < d.length; i++) sum = (sum * 31 + d.charCodeAt(i)) >>> 0;
+  var ok = d.length === +m[1] && sum.toString(16) === m[2];
+  s.textContent = (ok ? 'Arrived intact: ' : 'Arrived DAMAGED: ') + Math.round(d.length / 1024) + ' KB of ' + Math.round(m[1] / 1024) + ' KB. Logging…';
+  fetch('/api/ping?t=link', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({sent: +m[1], got: d.length, intact: ok, ua: navigator.userAgent.slice(0, 90)})})
+    .then(function(){ s.textContent += ' Logged. You can close this tab and try the next link.'; history.replaceState(null, '', location.pathname); }); })();
 if (window.opener) { try { window.opener.postMessage({ready: true}, '*'); } catch (e) {} }
 </script></body></html>
