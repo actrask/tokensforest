@@ -12,7 +12,7 @@ and the day's list to site/film/<who>-<day>.json  ({h, shots:[{n, src}]}), which
 world.json defaults to site/world.json; pass a fresher export for recent days.
 Needs: pip install playwright (and a Chrome or `playwright install chromium`).
 """
-import base64, functools, http.server, json, os, shutil, socketserver, sys, threading, time, urllib.request
+import base64, functools, http.server, json, os, shutil, socketserver, sys, threading, time, urllib.request, urllib.parse, urllib.error
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SITE = os.path.join(ROOT, 'site'); FR = os.path.join(ROOT, 'tools', 'film', 'frames'); OUT = os.path.join(SITE, 'film')
@@ -120,7 +120,7 @@ def animate(who, day, n, prompt):
     img = API + '/' + shot['src'] + '?v=' + str(int(time.time()))
     q = json.load(urllib.request.urlopen(urllib.request.Request(API + '/api/video', json.dumps({'image': img, 'prompt': prompt}).encode(), hdr), timeout=120))
     print('queued', q.get('id'))
-    import urllib.parse
+
     qs = urllib.parse.urlencode({'status': q['status'], 'result': q['result']})
     for _ in range(120):   # up to ~30 minutes
         time.sleep(15)

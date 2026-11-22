@@ -23,10 +23,17 @@ Artifact (Claude version of the forest): slug `fdfa22dc-8fa8-447f-b4ab-3138b3dcb
 5. `python3 tools/film/film.py frames <who> <day> n,n,n,n,n /tmp/world.json` (about 15 minutes per day; run it in
    the background and poll). Then open `tools/film/frames/<who>-<day>-sheet.jpg` with the Read tool and choose the
    best take for each row (a/b/c): the character clearly visible, not an extreme close-up of one body part, not
-   blocked by foreground logs. `film.py pick <who> <day> 1=a,4=c`. If a moment has no usable take, retake it
+   blocked by foreground logs, and nothing clipping (a foot or leg on the near side of a log, rock or table while the body is behind it,
+   a staff through a wall). `film.py pick <who> <day> 1=a,4=c`. If a moment has no usable take, retake it
    (`frames` with just that n) or swap it for another beat (delete that row from tools/film/frames/<who>-<day>.json first).
 6. `python3 tools/film/film.py develop <who> <day>` (about 15 cents per photo; uses the public /api/photoreal endpoint).
    If fal reports an exhausted balance, stop making photos, keep whatever finished, and say so in the run summary.
+6b. Animate ONE hero still per character per day (the most cinematic: firelight, lanterns, sunset, an encounter):
+   `FOREST_SYNC=<sync key from the task prompt> python3 tools/film/film.py animate <who> <day> <n> "<motion prompt>"` (about 56 cents,
+   5 to 15 minutes). Write the motion prompt as a live-action film shot with ONE small camera move (slow push-in, or locked-off),
+   describe only gentle motion (flame flicker, breathing, water, drifting leaves or fireflies, a small gesture from the beat),
+   and describe the character by look (Token: small turtle-skinned creature with a shell; Gage: young tinkerer with spiky hair and brass goggles).
+   The route adds the props-stay-put and keep-the-character lines itself. Never put the key in the repo.
 7. Commit `site/film/*` (not tools/film/frames) and push. Then add the same files to the artifact with publish_files
    in patch mode: each `site/film/X` as `film/X` (call list_files first, as the tool requires).
 8. End with a one-line summary of the days filmed and photos made.
