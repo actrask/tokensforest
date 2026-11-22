@@ -10,7 +10,7 @@
   var LIVE = 'https://raw.githubusercontent.com/actrask/tokensforest/main/site/world.json';
   function grab(u){ return fetch(u + '?t=' + Math.floor(Date.now()/600000), {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){ return j && j.docs ? j : null; }).catch(function(){ return null; }); }
   function load(){ return grab('/api/world').then(function(j){ return j || grab(LIVE); }).then(function(j){ return j || grab('world.json'); }).then(function(j){
-      if (!j || !j.docs) return false; var s = j.exportedAt || JSON.stringify(j).length + ''; if (s === stamp) return false; stamp = s; DATA = j; return true; }).catch(function(){ return false; }); }
+      if (!j || !j.docs) return false; var s = j.exportedAt || JSON.stringify(j).length + ''; if (s === stamp) return false; stamp = s; DATA = j; try { showAsOf(); } catch (e) {} return true; }).catch(function(){ return false; }); }
   function docSnap(p){ var d = DATA.docs[p]; return {exists: !!d, id: p.split('/').pop(), data: function(){ return d; }, metadata: {fromCache:false}}; }
   function colSnap(p, order, lim){ var items = Object.keys(DATA.docs).filter(function(k){ return k.indexOf(p + '/') === 0 && k.split('/').length === 2; }).map(function(k){ var v = DATA.docs[k]; return {id: k.split('/')[1], data: function(){ return v; }}; });
     if (order){ items.sort(function(a, b){ var x = (a.data() || {})[order.f], y = (b.data() || {})[order.f]; x = x === undefined ? a.id : x; y = y === undefined ? b.id : y; return (x < y ? -1 : x > y ? 1 : 0) * (order.desc ? -1 : 1); }); }
@@ -22,6 +22,22 @@
     collection: function(p){ var order = null, lim = 0; var q = { orderBy: function(f, dir){ order = {f: f, desc: dir === 'desc'}; return q; }, limit: function(n){ lim = n; return q; }, where: function(){ return q; },
         onSnapshot: function(cb){ return sub(function(){ cb(colSnap(p, order, lim)); }); }, get: function(){ return Promise.resolve(colSnap(p, order, lim)); }, add: no, doc: function(id){ return db.doc(p + '/' + id); } }; return q; }
   };
+  // "Forest as of ..." under the clock, so a stale copy reads as stale instead of as a sleepy forest
+  var asOf = null;
+  function showAsOf(){
+    var t = Date.parse(DATA.exportedAt || DATA.syncedAt || ''); if (isNaN(t)) return;
+    if (!asOf) { if (!document.body) { document.addEventListener('DOMContentLoaded', showAsOf); return; }
+      asOf = document.createElement('div'); asOf.id = 'asOf'; document.body.appendChild(asOf);
+      var css = document.createElement('style'); css.textContent = '#asOf{position:fixed;z-index:5;left:14px;top:58px;padding:4px 11px;border-radius:999px;background:rgba(30,25,22,.62);color:#efe6d6;font:600 12px/1.4 system-ui,sans-serif;pointer-events:none;transition:opacity .6s;max-width:70vw}#asOf.old{background:rgba(120,78,12,.82);color:#fff3dc} body.cine #asOf{opacity:0}'; document.head.appendChild(css);
+      setInterval(place, 2000); }
+    var d = new Date(t), hrs = (Date.now() - t) / 3600000, owner = false; try { owner = !!localStorage.getItem('forestAdmin'); } catch (e) {}
+    var when = d.toLocaleDateString(undefined, {weekday:'short'}) + ' ' + d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+    asOf.classList.toggle('old', hrs > 3);
+    asOf.textContent = 'Forest as of ' + when + (hrs > 3 ? ' \u00b7 not updated in ' + (hrs > 48 ? Math.round(hrs / 24) + ' days' : Math.round(hrs) + ' hours') + (owner ? ' \u00b7 sync from Claude to update' : '') : '');
+    place();
+  }
+  function place(){ if (!asOf) return; var c = document.getElementById('clock'); if (!c) return; var r = c.getBoundingClientRect(); if (!r.width) return; asOf.style.left = r.left + 'px'; asOf.style.top = (r.bottom + 6) + 'px'; }
+  setInterval(function(){ try { showAsOf(); } catch (e) {} }, 300000);
   var ready = load().then(function(){ return db; });
   setInterval(function(){ load().then(function(changed){ if (changed) subs.slice().forEach(function(fn){ try { fn(); } catch (e) {} }); }); }, 600000);
   window.claude = { use: function(n){ return n === 'db' ? ready : Promise.resolve(null); } };
