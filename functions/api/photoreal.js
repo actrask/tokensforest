@@ -33,13 +33,16 @@ const PROMPT =
   'If the frame is bright, hazy and backlit, the photo is bright, hazy and backlit, with the same glowing atmosphere and volumetric beams; ' +
   'if it is dark, it stays dark. Never darken it, never close the canopy over open sky, never trade its light for a generic moody forest look. ' +
   'At night or indoors, the light comes only from the lanterns, candles and fires in the frame. ' +
-  'CHARACTERS IN THE LIGHT: each character is lit by the scene\'s real sun or main light, like a lead actor on a film set. When that light is behind or beside him, ' +
-  'give him a strong, bright, warm rim of sunlight tracing his hair, ears, shoulders, arms, goggles and shoes, clearly separating him from the background, ' +
-  'plus soft bounce light from the bright ground and sky filling his face and clothes so every detail reads. Never a dark, murky or filled-in figure, never a silhouette; ' +
-  'keep his values as light and airy as the frame around him. ' +
+  'THE HERO IS LIT LIKE A HERO: the main character is the star of this shot and is lit the way a film crew lights its lead, with the scene\'s sun as the key. ' +
+  'When the sun is behind or beside him, give him a hot, bright, golden edge light: a crisp glowing rim that clearly outlines his whole silhouette, ' +
+  'the hair blazing with light, a bright line along his ears, cheek, neck, shoulders, back, arms, hands and shoes, light catching the goggle rims, ' +
+  'strong enough to be the brightest edge in the frame and to pop him off the background. Fill his face and front with warm bounce light from the sunlit ground ' +
+  'so his expression and clothes read clearly. Never dark, murky, flat or filled in, never a silhouette; he is the most clearly lit, most readable thing in the shot. ' +
+  'Warmth: the whole image feels warm, the golden, honey-colored warmth of sunlight in a forest: warm highlights, warm haze, warm skin, golden light on wood and water, ' +
+  'with only gentle cool tones in the deepest shadows. Never cold, gray, blue or desaturated. ' +
   'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with needles and debris. ' +
   'Blankets and bedding are dense, thick wool. ' +
-  'Color: the frame\'s own palette as real film color, true exposure, fine film grain. Never oversaturated, glossy, HDR, cute or storybook. ' +
+  'Color: the frame\'s own palette pushed warm, as real film color, true exposure, fine film grain. Never oversaturated, glossy, HDR, cute or storybook. ' +
   'No outlines, ink lines or crosshatching. ' +
   'Do not add any people, creatures, robots or characters that are not already in the frame, and do not remove any that are.';
 
