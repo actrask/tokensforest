@@ -19,6 +19,9 @@ const PROMPT =
   'in the same place in the frame at the same size, with the same silhouette and the same amount of empty space around it. ' +
   'Do not reframe, zoom in, center, enlarge or move the subject closer, do not change the aspect of any object, and do not add or leave out props. ' +
   'If a character is small or far away in the frame, it stays small and far away. ' +
+  'Depth is locked too: anything seen through a doorway, window or opening stays deep inside at the same distance and size, partly hidden by the frame of the opening; ' +
+  'never pull a character, bed or furniture forward to the threshold or out of the doorway to show it off. ' +
+  'Use only the light sources already in the frame; never add fires, candles, lamps or glows that are not there. ' +
   'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
   'and never add vehicles, boats or new furniture. ' +
   'Realism is for the world, the light and the materials, not the character designs. The characters keep their stylized designs exactly as drawn: ' +
