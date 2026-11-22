@@ -2,7 +2,8 @@
 
   python3 tools/film/film.py frames <who> <day> <n,n,...> [world.json]   # capture the 3D frames for those sentences (free)
   python3 tools/film/film.py pick <who> <day> 1=a,4=c                     # choose a different take (a/b/c) from the contact sheet
-  python3 tools/film/film.py develop <who> <day>                         # turn the captured frames into realistic photos (~15c each)
+  python3 tools/film/film.py develop <who> <day>
+  FOREST_SYNC=... python3 tools/film/film.py animate <who> <day> <n> "motion prompt"   # one still -> 5 s Kling clip (~56c)                         # turn the captured frames into realistic photos (~15c each)
 
 <who> is token or gage, <day> is YYYY-MM-DD, n are 0-based sentence (beat) numbers of that day's telling.
 Only days whose recording exists in site/audio are accepted.
@@ -108,8 +109,36 @@ def develop(who, day):
     json.dump({'h': plan['h'], 'shots': shots}, open(os.path.join(OUT, '%s-%s.json' % (who, day)), 'w'))
     print('wrote', os.path.join(OUT, '%s-%s.json' % (who, day)))
 
+def animate(who, day, n, prompt):
+    """Turn one finished still into a 5 s clip (Kling, ~56 cents). Needs FOREST_SYNC (the sync key) in the environment."""
+    key = os.environ.get('FOREST_SYNC') or os.environ.get('FOREST_ADMIN'); n = int(n)
+    if not key: sys.exit('set FOREST_SYNC to the sync key')
+    hdr = {'Content-Type': 'application/json', 'User-Agent': 'forest-film/1', 'Origin': API,
+           ('X-Forest-Sync' if os.environ.get('FOREST_SYNC') else 'X-Forest-Admin'): key}
+    mf = os.path.join(OUT, '%s-%s.json' % (who, day)); man = json.load(open(mf))
+    shot = [x for x in man['shots'] if x['n'] == n][0]
+    img = API + '/' + shot['src'] + '?v=' + str(int(time.time()))
+    q = json.load(urllib.request.urlopen(urllib.request.Request(API + '/api/video', json.dumps({'image': img, 'prompt': prompt}).encode(), hdr), timeout=120))
+    print('queued', q.get('id'))
+    import urllib.parse
+    qs = urllib.parse.urlencode({'status': q['status'], 'result': q['result']})
+    for _ in range(120):   # up to ~30 minutes
+        time.sleep(15)
+        try: r = json.load(urllib.request.urlopen(urllib.request.Request(API + '/api/video?' + qs, headers=hdr), timeout=60))
+        except urllib.error.HTTPError as e: r = json.loads(e.read() or b'{}')
+        if r.get('state') == 'done': break
+        if r.get('state') == 'failed': sys.exit('failed: %s' % r)
+    else: sys.exit('timed out')
+    dst = os.path.join(OUT, '%s-%s-%d.mp4' % (who, day, n)); raw = dst + '.raw.mp4'
+    open(raw, 'wb').write(urllib.request.urlopen(urllib.request.Request(r['url'], headers={'User-Agent': 'forest-film/1'}), timeout=300).read())
+    import subprocess   # web size: 1080p max, H.264, no audio, fast start
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-an', '-vf', "scale='min(1920,iw)':-2", '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23',
+                    '-pix_fmt', 'yuv420p', '-movflags', '+faststart', dst], check=True); os.remove(raw)
+    shot['clip'] = 'film/' + os.path.basename(dst); json.dump(man, open(mf, 'w')); print('clip', dst)
+
 if __name__ == '__main__':
     if sys.argv[1] == 'frames': frames(sys.argv[2], sys.argv[3], [int(x) for x in sys.argv[4].split(',')], sys.argv[5] if len(sys.argv) > 5 else os.path.join(SITE, 'world.json'))
     elif sys.argv[1] == 'pick': pick(sys.argv[2], sys.argv[3], sys.argv[4])
+    elif sys.argv[1] == 'animate': animate(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
     elif sys.argv[1] == 'sheet': sheet(sys.argv[2], sys.argv[3])
     else: develop(sys.argv[2], sys.argv[3])

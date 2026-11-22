@@ -26,7 +26,8 @@ const PROMPT =
   'and never add vehicles, boats or new furniture. ' +
   'NOTHING PASSES THROUGH ANYTHING. The frame comes from a game engine, so a foot may sink into a log, a leg into a rock, a hand into a table, a body into the ground or a staff through a wall. ' +
   'Repair every such intersection the way a real photograph would show it: feet rest on top of the ground, rock or log, a body stands in front of or beside an object, hands touch surfaces without entering them, ' +
-  'and objects are whole and solid. Keep each character in the same place and pose; only fix the contact. ' +
+  'and objects are whole and solid. If feet or legs show on the near side of a log, rock or table while the body is behind it, the feet are wrong: '+
+  'redraw the legs so the character stands fully behind the object (feet hidden by it) or sits on top of it. Keep each character in the same place; change only what is needed to fix the contact. ' +
   '@@STYLE@@ ' +
   'Everything is filmed at full scale. ' +
   'Normal cinema depth of field for a full-size scene, background softly out of focus; never macro, tilt-shift, diorama or miniature-looking. ' +

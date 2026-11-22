@@ -25,8 +25,8 @@
     '#pres .list{margin-top:14px;max-height:34vh;overflow:auto;display:none} #pres .list.open{display:block}',
     '#pres .list button{display:block;width:100%;font:inherit;font-size:15px;background:none;border:0;border-bottom:1px solid rgba(244,234,210,.15);color:#f4ead2;padding:9px 4px;cursor:pointer;text-align:left}',
     '#presKB{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden;background:#000;opacity:0;transition:opacity 1.4s ease-in-out}',
-    '#presKB.on{opacity:1} #presKB img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.4s ease-in-out;will-change:transform,opacity;transform-origin:50% 50%}',
-    '#presKB img.on{opacity:1}',
+    '#presKB.on{opacity:1} #presKB img,#presKB video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.4s ease-in-out;will-change:transform,opacity;transform-origin:50% 50%}',
+    '#presKB img.on,#presKB video.on{opacity:1}',
     '#presCap{position:fixed;left:50%;bottom:4.2vh;transform:translateX(-50%);z-index:35;max-width:min(880px,88vw);text-align:center;color:#f7efdc;font-family:Georgia,serif;font-size:clamp(15px,2.1vw,21px);line-height:1.4;text-shadow:0 1px 3px #000,0 0 12px rgba(0,0,0,.8);opacity:0;transition:opacity .6s;pointer-events:none}',
     'body.present.playing #presCap{opacity:1}',
     '#presTog,#presStop{position:fixed;z-index:45;top:12px;font:13px/1 -apple-system,system-ui,sans-serif;padding:8px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.38);color:#fff;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}',
@@ -85,7 +85,8 @@
     P = {who:who, day:day, t:r.m.t, cur:-1, shots:{}, imgs:{}, k:0, shown:null};
     fetch('film/' + who + '-' + day + '.json', {cache:'no-store'}).then(function(x){ return x.ok ? x.json() : null; }).then(function(j){
       if (!P || P.day !== day || !j || j.h !== r.key.split('-').pop()) return;
-      j.shots.slice(0, 5).forEach(function(s){ var im = new Image(); im.decoding = 'async'; im.src = s.src; P.shots[s.n] = im; }); }).catch(function(){});
+      j.shots.slice(0, 5).forEach(function(s){ var im = new Image(); im.decoding = 'async'; im.src = s.src; P.shots[s.n] = im;
+        if (s.clip){ var v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; v.src = s.clip; v.poster = s.src; im.__clip = v; } }); }).catch(function(){});
     setTimeout(function(){ if (P && P.day === day) f.play(who, day); }, 50);
     P.iv = setInterval(tick, 200); }
   function tick(){ var f = F(); if (!P || !f) return; var A = f.audio, ct = A.currentTime || 0;
@@ -96,7 +97,11 @@
   function still(i){ var im = P.shots[i];
     if (!im || !im.complete || !im.naturalWidth){ if (P.shown){ var old = P.shown; P.shown = null; kb.classList.remove('on'); old.classList.remove('on'); setTimeout(function(){ if (old.parentNode && !old.classList.contains('on')) old.remove(); }, 1500); } return; }
     var end = i + 1 < P.t.length ? P.t[i + 1] : (P.t[i] + 9), dur = Math.max(6, end - P.t[i] + 1.4), mv = MOVES[P.k++ % MOVES.length];
-    var el = im.cloneNode(); el.style.transition = 'none'; el.style.transform = tf(mv[0]); kb.appendChild(el); kb.classList.add('on');
+    var clip = im.__clip, el;
+    if (clip){ el = clip; im.__clip = null; mv = [[1.0, 0, 0], [1.04, 0, -.5]];   // a clip moves by itself: only a faint push-in, and it is slowed to fill its sentence
+      try { el.currentTime = 0; el.playbackRate = Math.max(0.5, Math.min(1, 5 / dur)); el.play().catch(function(){}); } catch (e) {} }
+    else el = im.cloneNode();
+    el.style.transition = 'none'; el.style.transform = tf(mv[0]); kb.appendChild(el); kb.classList.add('on');
     void el.offsetWidth; el.style.transition = 'opacity 1.4s ease-in-out, transform ' + dur.toFixed(1) + 's cubic-bezier(.42,0,.58,1)';
     el.classList.add('on'); el.style.transform = tf(mv[1]);
     var old = P.shown; P.shown = el; if (old){ old.classList.remove('on'); setTimeout(function(){ old.remove(); }, 1500); } }
