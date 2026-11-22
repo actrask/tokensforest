@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Approve notes · Token's Forest</title>
+<style>
+body{margin:0;background:#1d1916;color:#f1e7d6;font:16px/1.5 system-ui,sans-serif;padding:18px;box-sizing:border-box}
+main{max-width:760px;margin:0 auto} h1{font-size:22px;margin:4px 0 2px} .sub{color:#a99c86;font-size:14px;margin-bottom:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px} .tabs button,.act button,.btn{border:0;border-radius:999px;padding:8px 14px;font:600 14px system-ui;cursor:pointer;background:#3a322c;color:#f1e7d6}
+.tabs button.on{background:#f4ead8;color:#2a2420} .act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.act .ok{background:#2f6b3f} .act .no{background:#6b3a2f} .act .block{background:#4a2626}
+.card{background:#2a2420;border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.who{font-weight:600} .meta{color:#a99c86;font-size:13px} .text{white-space:pre-wrap;margin-top:6px;font-size:17px}
+.reply{margin-top:8px;padding:8px 10px;border-left:3px solid #c9a66b;background:#231e1a;border-radius:0 8px 8px 0;white-space:pre-wrap;font-size:14px}
+.st{font-size:12px;padding:1px 8px;border-radius:999px;background:#3a322c;margin-left:6px} .st.approved{background:#2f5a3a} .st.declined{background:#5a2f2f} .st.pending{background:#6b5a2a}
+.warn{background:#5a3a1a;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px} input{padding:9px;border-radius:8px;border:1px solid #5a4e44;background:#14110f;color:#f1e7d6;font:inherit;width:260px}
+a{color:#e6c98f}
+</style></head><body><main>
+<h1>Notes from visitors</h1><div class="sub">Nothing reaches Token or Gage until you approve it. Approved notes show on tokensforest.com with the sender's first name only. <a href="/">Back to the forest</a></div>
+<div id="setup"></div>
+<div class="tabs" id="tabs"><button data-f="pending" class="on">Waiting</button><button data-f="approved">Approved</button><button data-f="declined">Declined</button><button data-f="blocked">Blocked people</button></div>
+<div id="list">Loading…</div>
+</main>
+<script>
+(function(){
+  var KEY = ''; try { KEY = localStorage.getItem('forestAdmin') || ''; } catch (e) {}
+  var F = 'pending', DATA = null;
+  var $ = function(s){ return document.querySelector(s); };
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function when(t){ var d = new Date(t); return isNaN(d) ? '' : d.toLocaleString(undefined, {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'}); }
+  function nm(w){ return w === 'gage' ? 'Gage' : 'Token'; }
+  function ask(){
+    $('#list').innerHTML = '<div class="card">This device is not set up as the forest’s keeper yet. Enter your passphrase (the same one as tokensforest.com/#admin=…):<div style="margin-top:8px"><input id="pw" type="password" autocomplete="current-password"> <button class="btn" id="go">Continue</button></div></div>';
+    $('#go').onclick = function(){ KEY = $('#pw').value.trim(); try { localStorage.setItem('forestAdmin', KEY); } catch (e) {} load(); };
+  }
+  function load(){
+    if (!KEY) return ask();
+    fetch('/api/letters/admin', {headers:{'X-Forest-Admin': KEY}, cache:'no-store'}).then(function(r){ return r.json().then(function(j){ return {s:r.status, j:j}; }); }).then(function(x){
+      if (x.s === 403) return ask();
+      DATA = x.j; var w = [];
+      if (!DATA.on) w.push('Sign-in is not switched on: add <b>GOOGLE_CLIENT_ID</b> in Cloudflare (Pages project → Settings → Variables and Secrets), then redeploy.');
+      if (!DATA.replies) w.push('Replies cannot come back yet: add the <b>NOTES_KEY</b> secret in Cloudflare, then redeploy.');
+      $('#setup').innerHTML = w.map(function(t){ return '<div class="warn">' + t + '</div>'; }).join('');
+      var n = DATA.letters.filter(function(l){ return l.status === 'pending'; }).length; $('#tabs button[data-f=pending]').textContent = 'Waiting' + (n ? ' (' + n + ')' : '');
+      paint();
+    }).catch(function(){ $('#list').textContent = 'Could not load the notes.'; });
+  }
+  function act(body, btn){ btn.disabled = true; fetch('/api/letters/admin', {method:'POST', headers:{'Content-Type':'application/json', 'X-Forest-Admin': KEY}, body: JSON.stringify(body)}).then(function(){ load(); }).catch(function(){ btn.disabled = false; }); }
+  function paint(){
+    var list = $('#list');
+    if (F === 'blocked'){
+      var B = DATA.blocked || []; if (!B.length){ list.innerHTML = '<div class="meta">Nobody is blocked.</div>'; return; }
+      list.innerHTML = B.map(function(sub){ var l = DATA.letters.find(function(x){ return x.sub === sub; }) || {}; return '<div class="card"><span class="who">' + esc(l.name || 'Unknown') + '</span> <span class="meta">' + esc(l.email || sub) + '</span><div class="act"><button data-un="' + esc(sub) + '">Unblock</button></div></div>'; }).join('');
+      [].forEach.call(list.querySelectorAll('[data-un]'), function(b){ b.onclick = function(){ act({action:'unblock', sub:b.dataset.un}, b); }; }); return;
+    }
+    var L = DATA.letters.filter(function(l){ return l.status === F; });
+    if (!L.length){ list.innerHTML = '<div class="meta">' + (F === 'pending' ? 'Nothing waiting. ' : '') + 'No notes here.</div>'; return; }
+    list.innerHTML = L.map(function(l){
+      var rep = ['token','gage'].filter(function(w){ return l.reply && l.reply[w]; }).map(function(w){ return '<div class="reply"><b>' + nm(w) + ':</b> ' + esc(l.reply[w]) + '</div>'; }).join('');
+      var b = l.status === 'pending' ? '<button class="ok" data-a="approve">Approve</button><button class="no" data-a="decline">Decline</button>' : l.status === 'approved' ? '<button class="no" data-a="decline">Take down</button>' : '<button class="ok" data-a="approve">Approve after all</button><button data-a="delete">Delete</button>';
+      return '<div class="card" data-id="' + esc(l.id) + '" data-sub="' + esc(l.sub) + '"><span class="who">' + esc(l.name || l.first) + '</span> <span class="meta">' + esc(l.email) + ' · shown as “' + esc(l.first) + '”</span><span class="st ' + esc(l.status) + '">' + esc(l.status) + '</span>' +
+        '<div class="meta">' + esc(when(l.at)) + ' · to ' + l.to.map(nm).join(' and ') + '</div><div class="text">' + esc(l.text) + '</div>' + rep +
+        '<div class="act">' + b + '<button class="block" data-a="block">Block this person</button></div></div>';
+    }).join('');
+    [].forEach.call(list.querySelectorAll('[data-a]'), function(bt){ bt.onclick = function(){ var c = bt.closest('.card'), a = bt.dataset.a;
+      if (a === 'block'){ if (!confirm('Block this person? Their waiting notes are declined and they cannot send more.')) return; act({action:'block', sub:c.dataset.sub}, bt); }
+      else if (a === 'delete'){ if (!confirm('Delete this note for good?')) return; act({action:'delete', id:c.dataset.id}, bt); }
+      else act({action:a, id:c.dataset.id}, bt); }; });
+  }
+  [].forEach.call(document.querySelectorAll('#tabs button'), function(b){ b.onclick = function(){ F = b.dataset.f; [].forEach.call(document.querySelectorAll('#tabs button'), function(x){ x.classList.toggle('on', x === b); }); if (DATA) paint(); }; });
+  load(); setInterval(function(){ if (KEY && F === 'pending') load(); }, 60000);
+})();
+</script></body></html>
