@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Token's Forest photo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#14110e;color:#f1e7d6;font:16px/1.45 system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px}
+#frame{position:relative;max-width:min(1200px,100%)}#frame img{display:block;max-width:100%;max-height:calc(100dvh - 150px);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#frame.dev img{filter:grayscale(.6) brightness(.55) blur(1.5px)}#msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;font-weight:600;text-shadow:0 1px 4px #000}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.btn{min-height:44px;padding:10px 18px;border-radius:999px;border:0;background:#3a312a;color:#f1e7d6;font:600 15px system-ui;text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}
+.btn.on,.btn.main{background:#f4ead8;color:#2a2420}.seg .btn{border-radius:0}.seg .btn:first-child{border-radius:999px 0 0 999px}.seg .btn:last-child{border-radius:0 999px 999px 0}.seg{display:flex}
+</style></head><body>
+<div id="frame" class="dev"><img id="img" alt="Forest photo"><div id="msg">Unpacking the picture…</div></div>
+<div class="bar"><span class="seg"><button class="btn" data-s="stylized">Stylized</button><button class="btn" data-s="realistic">Realistic</button></span>
+<button class="btn" id="orig" style="display:none">Show original</button><button class="btn" id="save" style="display:none">Save</button><a class="btn main" href="/">Open the forest</a></div>
+<script>
+{
+  const img = document.getElementById('img'), msg = document.getElementById('msg'), frame = document.getElementById('frame');
+  const bOrig = document.getElementById('orig'), bSave = document.getElementById('save');
+  let STYLE = 'stylized'; try { STYLE = localStorage.getItem('forestStyle') === 'realistic' ? 'realistic' : 'stylized'; } catch (e) {}
+  let C = null, photo = '', busy = false, redo = false, showing = 'photo';
+  const packed = location.hash.slice(1); history.replaceState(null, '', location.pathname);
+  const paint = () => document.querySelectorAll('[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === STYLE));
+  const say = t => { msg.textContent = t; msg.style.display = 'flex'; frame.classList.add('dev'); };
+  function hdrs(){ const h = {'Content-Type':'application/json'}; try { const k = localStorage.getItem('forestAdmin'); if (k) h['X-Forest-Admin'] = k; } catch (e) {} return h; }
+  async function develop(){
+    if (busy) { redo = true; return; } busy = true; photo = ''; bOrig.style.display = bSave.style.display = 'none'; img.src = C.image; showing = 'photo'; bOrig.textContent = 'Show original';
+    const style = STYLE; say('Developing the ' + style + ' photo… (about 30 seconds)');
+    try {
+      const r = await fetch('/api/photoreal', {method:'POST', headers: hdrs(), body: JSON.stringify({image: C.image, aspect: C.aspect, who: C.who, scene: C.scene, clock: C.clock, style})});
+      const j = await r.json().catch(() => ({}));
+      if (!j.url) throw new Error(j.error || 'The photo did not develop.');
+      const u = j.url.charAt(0) === '/' ? location.origin + j.url : j.url;
+      await new Promise((res, rej) => { const p = new Image(); p.onload = res; p.onerror = () => rej(new Error('The photo did not load.')); p.src = u; });
+      photo = u; img.src = u; frame.classList.remove('dev'); msg.style.display = 'none'; bOrig.style.display = bSave.style.display = '';
+      try { const l = JSON.parse(localStorage.getItem('forestPhotos') || '[]'); l.unshift({url: u, who: C.who, at: new Date().toISOString()}); localStorage.setItem('forestPhotos', JSON.stringify(l.slice(0, 300))); } catch (e) {}
+    } catch (e) { say(e.message); }
+    busy = false; if (redo) { redo = false; if (style !== STYLE) develop(); }
+  }
+  document.querySelector('.seg').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (!b || b.dataset.s === STYLE) return; STYLE = b.dataset.s; try { localStorage.setItem('forestStyle', STYLE); } catch (err) {} paint(); if (C) develop(); });
+  bOrig.onclick = () => { showing = showing === 'photo' ? 'orig' : 'photo'; img.src = showing === 'photo' ? photo : C.image; bOrig.textContent = showing === 'photo' ? 'Show original' : 'Show photo'; };
+  bSave.onclick = () => fetch(photo).then(r => r.blob()).then(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'tokens-forest-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.jpg'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }).catch(() => window.open(photo, '_blank'));
+  paint();
+  (async () => {
+    if (!packed) { say('This link arrived without a picture in it. Go back to the forest in Claude and tap the camera again.'); return; }
+    const bin = atob(packed.replace(/-/g, '+').replace(/_/g, '/')); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    C = JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text());
+    if (!C || !C.image) { say('The picture did not arrive in one piece.'); return; }
+    develop();
+  })().catch(e => say('Could not unpack the picture: ' + e.message));
+}
+</script></body></html>

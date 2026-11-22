@@ -9,7 +9,7 @@
   var DATA = {docs:{}}, subs = [], stamp = '';
   var LIVE = 'https://raw.githubusercontent.com/actrask/tokensforest/main/site/world.json';
   function grab(u){ return fetch(u + '?t=' + Math.floor(Date.now()/600000), {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){ return j && j.docs ? j : null; }).catch(function(){ return null; }); }
-  function load(){ return grab(LIVE).then(function(j){ return j || grab('world.json'); }).then(function(j){
+  function load(){ return grab('/api/world').then(function(j){ return j || grab(LIVE); }).then(function(j){ return j || grab('world.json'); }).then(function(j){
       if (!j || !j.docs) return false; var s = j.exportedAt || JSON.stringify(j).length + ''; if (s === stamp) return false; stamp = s; DATA = j; return true; }).catch(function(){ return false; }); }
   function docSnap(p){ var d = DATA.docs[p]; return {exists: !!d, id: p.split('/').pop(), data: function(){ return d; }, metadata: {fromCache:false}}; }
   function colSnap(p, order, lim){ var items = Object.keys(DATA.docs).filter(function(k){ return k.indexOf(p + '/') === 0 && k.split('/').length === 2; }).map(function(k){ var v = DATA.docs[k]; return {id: k.split('/')[1], data: function(){ return v; }}; });

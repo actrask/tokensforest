@@ -1,0 +1,26 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Syncing Token's Forest</title>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1d1916;color:#f1e7d6;font:17px/1.5 system-ui,sans-serif;padding:24px;box-sizing:border-box}
+.card{max-width:460px;background:#2a2420;border-radius:16px;padding:24px 26px;box-shadow:0 10px 40px rgba(0,0,0,.45)}h1{font-size:24px;margin:0 0 10px}
+a.btn{display:inline-block;margin-top:16px;padding:12px 20px;border-radius:999px;background:#f4ead8;color:#2a2420;text-decoration:none;font-weight:600}</style></head>
+<body><div class="card"><h1>Token's Forest</h1><p id="s">Unpacking the world…</p><a class="btn" id="go" href="/" style="display:none">Open the forest</a></div>
+<script>
+{
+  const s = document.getElementById('s'), go = document.getElementById('go');
+  const say = t => { s.textContent = t; };
+  const packed = location.hash.slice(1); history.replaceState(null, '', location.pathname);
+  let key = ''; try { key = localStorage.getItem('forestAdmin') || ''; } catch (e) {}
+  (async () => {
+    if (!packed) { say('This link arrived without the world in it. Go back to Claude and tap Sync to tokensforest.com again.'); return; }
+    if (!key) { say('This device is not set up as the forest’s maker yet. Open tokensforest.com/#admin=<your passphrase> once on this device, then tap Sync again in Claude.'); return; }
+    const b64 = packed.replace(/-/g, '+').replace(/_/g, '/'); const bin = atob(b64); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const text = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+    say('Sending the world to the site…');
+    const r = await fetch('/api/world', {method: 'POST', headers: {'Content-Type': 'application/json', 'X-Forest-Admin': key}, body: text});
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { say(j.error || 'The site did not accept the world.'); return; }
+    const when = j.exportedAt ? new Date(j.exportedAt).toLocaleString(undefined, {weekday:'short', hour:'numeric', minute:'2-digit'}) : 'now';
+    say('Synced. tokensforest.com now shows the forest as of ' + when + ' (' + j.docs + ' documents' + (j.notes ? ', ' + j.notes + ' notes' : '') + '). Visitors see it on their next load.');
+    go.style.display = 'inline-block';
+  })().catch(e => say('Something went wrong unpacking the world: ' + e.message));
+}
+</script></body></html>
