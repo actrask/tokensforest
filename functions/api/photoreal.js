@@ -27,12 +27,15 @@ const PROMPT =
   '@@STYLE@@ ' +
   'Everything is filmed at full scale. ' +
   'Normal cinema depth of field for a full-size scene, background softly out of focus; never macro, tilt-shift, diorama or miniature-looking. ' +
-  'Light: naturalistic and motivated, with real contrast and deep shadows. Outdoors by day, soft directional sunlight filtered through the canopy, ' +
-  'gentle haze in the distance; do not put a sunburst or starburst in the frame and do not make light glow. At night or indoors, warm firelight, lantern ' +
-  'and candle light falling off into real darkness. Match the time of day and weather given. ' +
+  'LIGHTING IS LOCKED to the frame too: copy its exact lighting and mood and make it photographic, never relight the scene a different way. ' +
+  'Same sun direction and height, same overall brightness and exposure, same amount of open sky between the trees, same haze or fog density, ' +
+  'every light shaft, glare, backlight, rim light, reflection on water or wet ground and bright or dark area exactly where it is in the frame. ' +
+  'If the frame is bright, hazy and backlit, the photo is bright, hazy and backlit, with the same glowing atmosphere and volumetric beams; ' +
+  'if it is dark, it stays dark. Never darken it, never close the canopy over open sky, never trade its light for a generic moody forest look. ' +
+  'At night or indoors, the light comes only from the lanterns, candles and fires in the frame. ' +
   'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with needles and debris. ' +
   'Blankets and bedding are dense, thick wool. ' +
-  'Color: restrained, natural film color, slightly muted, true exposure, fine film grain. Never saturated, glossy, HDR, glowing, cute or storybook. ' +
+  'Color: the frame\'s own palette as real film color, true exposure, fine film grain. Never oversaturated, glossy, HDR, cute or storybook. ' +
   'No outlines, ink lines or crosshatching. ' +
   'Do not add any people, creatures, robots or characters that are not already in the frame, and do not remove any that are.';
 
