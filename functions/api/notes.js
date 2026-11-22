@@ -2,7 +2,7 @@
 //   GET  (owner or brain): { history: [...notes with replies], pending: [...not yet picked up by the brain] }
 //   POST (owner): { to: 'token' | 'gage', text } -> queued until the hourly brain files it as a creator note
 // Keys (Cloudflare secrets): OWNER_KEY / ADMIN_KEY for Cam's devices (header X-Forest-Admin),
-// SYNC_KEY for the hourly brain (header X-Forest-Sync). Storage: the PHOTO_KV namespace.
+// NOTES_KEY (or SYNC_KEY) for the hourly brain (header X-Forest-Sync). Storage: the PHOTO_KV namespace.
 
 export function sameText(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string' || !a || a.length !== b.length) return false;
@@ -14,7 +14,7 @@ export function isOwner(request, env) {
 }
 export function isSync(request, env) {
   const g = (request.headers.get('X-Forest-Sync') || '').trim();
-  return !!g && typeof env.SYNC_KEY === 'string' && sameText(g, env.SYNC_KEY.trim());
+  return !!g && [env.NOTES_KEY, env.SYNC_KEY].some(k => typeof k === 'string' && k.trim() && sameText(g, k.trim()));
 }
 export function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
