@@ -33,6 +33,10 @@ const PROMPT =
   'If the frame is bright, hazy and backlit, the photo is bright, hazy and backlit, with the same glowing atmosphere and volumetric beams; ' +
   'if it is dark, it stays dark. Never darken it, never close the canopy over open sky, never trade its light for a generic moody forest look. ' +
   'At night or indoors, the light comes only from the lanterns, candles and fires in the frame. ' +
+  'CHARACTERS IN THE LIGHT: each character is lit by the scene\'s real sun or main light, like a lead actor on a film set. When that light is behind or beside him, ' +
+  'give him a strong, bright, warm rim of sunlight tracing his hair, ears, shoulders, arms, goggles and shoes, clearly separating him from the background, ' +
+  'plus soft bounce light from the bright ground and sky filling his face and clothes so every detail reads. Never a dark, murky or filled-in figure, never a silhouette; ' +
+  'keep his values as light and airy as the frame around him. ' +
   'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with needles and debris. ' +
   'Blankets and bedding are dense, thick wool. ' +
   'Color: the frame\'s own palette as real film color, true exposure, fine film grain. Never oversaturated, glossy, HDR, cute or storybook. ' +
