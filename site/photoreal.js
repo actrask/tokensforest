@@ -14,7 +14,7 @@
     '#prFrame.dev img{filter:grayscale(.6) brightness(.55) blur(1.5px)}' +
     '#prMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f4ead8;font:600 15px/1.4 system-ui,sans-serif;text-align:center;padding:20px;text-shadow:0 1px 4px #000}' +
     '#prBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}' +
-    '#prBar .btn{min-width:90px}' + '#prFrame img{cursor:pointer}' + '#prCount{color:#cbbfa8;font:13px system-ui,sans-serif;text-align:center;min-height:16px}' + '#prFrame .nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font:600 30px system-ui;opacity:.55;pointer-events:none;text-shadow:0 1px 6px #000;padding:0 10px}' + '#prFrame .nav.l{left:0} #prFrame .nav.r{right:0}' +
+    '#prBar .btn{min-width:90px}' + '#prStyle{display:flex;gap:0;margin-right:10px} #prStyle .btn{min-width:84px;border-radius:0} #prStyle .btn:first-child{border-radius:999px 0 0 999px} #prStyle .btn:last-child{border-radius:0 999px 999px 0} #prStyle .btn.on{background:#f4ead8;color:#2a2420}' + '#prFrame img{cursor:pointer}' + '#prCount{color:#cbbfa8;font:13px system-ui,sans-serif;text-align:center;min-height:16px}' + '#prFrame .nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font:600 30px system-ui;opacity:.55;pointer-events:none;text-shadow:0 1px 6px #000;padding:0 10px}' + '#prFrame .nav.l{left:0} #prFrame .nav.r{right:0}' +
     '#photoBtn{position:fixed;right:132px;bottom:16px;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:opacity .6s}' +
     '#photoBtn svg{width:21px;height:21px;display:block}' +
     'body.cine #photoBtn{opacity:0;pointer-events:none}' +
@@ -118,29 +118,45 @@
     });
   }
 
+  var STYLE = 'stylized'; try { STYLE = localStorage.getItem('forestStyle') === 'realistic' ? 'realistic' : 'stylized'; } catch (e) {}
+  var LAST = null, REDO = false;   // the last captured frame, so it can be re-developed in the other look
   function shoot(){
     if (busy) { shade.classList.add('on'); return; }
-    busy = true; photo = ''; showing = 'photo'; bCompare.textContent = 'Show original'; setButtons(); count.textContent = ''; navL.style.display = navR.style.display = 'none';
-    grab().then(function(g){
-      original = g.data; img.src = original; frame.classList.add('dev'); msg.textContent = 'Developing the photo… (about 10–20 seconds)'; msg.style.display = 'flex';
-      shade.classList.add('on');
-      return fetch('/api/photoreal', {method:'POST', headers: adminHeaders(), body: JSON.stringify({image: g.data, aspect: g.aspect, who: whoNow(), scene: txt('statusTxt'), clock: txt('clock')})})
-        .then(function(r){ return r.json().catch(function(){ return {error:'The photo did not develop.'}; }); })
-        .then(function(j){
-          if (j.url && j.url.charAt(0) === '/') j.url = location.origin + j.url;
-          if (!j.url) throw new Error(j.error || 'The photo did not develop.');
-          return new Promise(function(res, rej){ var p = new Image(); p.onload = function(){ res(j.url); }; p.onerror = function(){ rej(new Error('The photo did not load.')); }; p.src = j.url; });
-        })
-        .then(function(u){ photo = u; img.src = u; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons();
-          var p = {url: u, who: whoNow(), at: new Date().toISOString(), original: original}; remember({url: u, who: p.who, at: p.at});
-          LIST = [p]; showAt(0);
-          fetchAll().then(function(all){ LIST = [p].concat(all.filter(function(x){ return x.url !== u; })); if (IDX === 0 && photo === u) showAt(0); }); });
-    }).catch(function(e){ frame.classList.add('dev'); msg.textContent = e.message || 'The photo did not develop.'; msg.style.display = 'flex'; })
-      .then(function(){ busy = false; });
+    grab().then(function(g){ LAST = {data: g.data, aspect: g.aspect, who: whoNow(), scene: txt('statusTxt'), clock: txt('clock')}; develop(LAST); });
   }
+  function develop(c){
+    if (busy) return; busy = true; photo = ''; showing = 'photo'; bCompare.textContent = 'Show original'; setButtons(); count.textContent = ''; navL.style.display = navR.style.display = 'none';
+    original = c.data; img.src = original; frame.classList.add('dev'); msg.textContent = 'Developing the ' + STYLE + ' photo\u2026 (about 30 seconds)'; msg.style.display = 'flex';
+    shade.classList.add('on'); paintStyle();
+    var style = STYLE;
+    fetch('/api/photoreal', {method:'POST', headers: adminHeaders(), body: JSON.stringify({image: c.data, aspect: c.aspect, who: c.who, scene: c.scene, clock: c.clock, style: style})})
+      .then(function(r){ return r.json().catch(function(){ return {error:'The photo did not develop.'}; }); })
+      .then(function(j){
+        if (j.url && j.url.charAt(0) === '/') j.url = location.origin + j.url;
+        if (!j.url) throw new Error(j.error || 'The photo did not develop.');
+        return new Promise(function(res, rej){ var p = new Image(); p.onload = function(){ res(j.url); }; p.onerror = function(){ rej(new Error('The photo did not load.')); }; p.src = j.url; });
+      })
+      .then(function(u){ photo = u; img.src = u; frame.classList.remove('dev'); msg.style.display = 'none'; setButtons();
+        var p = {url: u, who: c.who, at: new Date().toISOString(), original: original, style: style, fresh: true}; remember({url: u, who: p.who, at: p.at});
+        LIST = [p]; showAt(0);
+        fetchAll().then(function(all){ LIST = [p].concat(all.filter(function(x){ return x.url !== u; })); if (IDX === 0 && photo === u) showAt(0); }); })
+      .catch(function(e){ frame.classList.add('dev'); msg.textContent = e.message || 'The photo did not develop.'; msg.style.display = 'flex'; })
+      .then(function(){ busy = false; if (REDO) { REDO = false; if (LAST && style !== STYLE) develop(LAST); } });
+  }
+  // Stylized | Realistic switch in the viewer: remembered for next time; flipping it on a fresh photo re-develops that same frame
+  var sw = el('div', {id:'prStyle'}), sS = el('button', {'class':'btn light', 'data-s':'stylized'}, 'Stylized'), sR = el('button', {'class':'btn light', 'data-s':'realistic'}, 'Realistic');
+  sw.appendChild(sS); sw.appendChild(sR);
+  function paintStyle(){ sS.classList.toggle('on', STYLE === 'stylized'); sR.classList.toggle('on', STYLE === 'realistic'); }
+  sw.addEventListener('click', function(e){
+    var b = e.target.closest('[data-s]'); if (!b) return; var s2 = b.dataset.s; if (s2 === STYLE) return;
+    STYLE = s2; try { localStorage.setItem('forestStyle', STYLE); } catch (err) {} paintStyle();
+    if (busy) { if (LAST) REDO = true; return; }
+    var cur = LIST[IDX];
+    if (LAST && cur && cur.fresh && cur.style !== STYLE) develop(LAST);
+  });
 
   function init(){
-    document.body.appendChild(shade);
+    document.body.appendChild(shade); bar.insertBefore(sw, bar.firstChild); paintStyle();
     var b = el('button', {'class':'btn', id:'photoBtn', title:'Photoreal photo of this view', 'aria-label':'Take a photoreal photo of this view'},
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>');
     b.addEventListener('click', function(e){ e.stopPropagation(); shoot(); });

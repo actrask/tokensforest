@@ -24,11 +24,7 @@ const PROMPT =
   'Use only the light sources already in the frame; never add fires, candles, lamps or glows that are not there. ' +
   'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
   'and never add vehicles, boats or new furniture. ' +
-  'Realism is for the world, the light and the materials, not the character designs. The characters keep their stylized designs exactly as drawn: ' +
-  'the same exaggerated proportions, head size, eye or goggle size, hair shape and body shape as in the frame and the maker\'s sketches. ' +
-  'Never turn them into realistic humans, human children or animals, and never into dolls, puppets, figurines or toys. ' +
-  'Render them the way a top VFX studio brings a stylized character into a live-action film (like Paddington or Detective Pikachu): ' +
-  'the design untouched, but with real, physically convincing skin, fabric, metal and wood, weight, contact shadows and natural light on them. ' +
+  '@@STYLE@@ ' +
   'Everything is filmed at full scale. ' +
   'Normal cinema depth of field for a full-size scene, background softly out of focus; never macro, tilt-shift, diorama or miniature-looking. ' +
   'Light: naturalistic and motivated, with real contrast and deep shadows. Outdoors by day, soft directional sunlight filtered through the canopy, ' +
@@ -40,14 +36,30 @@ const PROMPT =
   'No outlines, ink lines or crosshatching. ' +
   'Do not add any people, creatures, robots or characters that are not already in the frame, and do not remove any that are.';
 
-// art notes per character, applied whenever they could be in the frame
-const CHARACTER_NOTES =
-  'Character notes: Gage is a stylized young tinkerer, not a realistic human boy. His design: an oversized, round head about as large as his whole torso; ' +
-  'huge round brass-framed goggles with smoked, darkly tinted lenses covering most of his face, his eyes only faintly visible behind them; ' +
-  'a few large, sharp, dramatic spikes of hair swept up and back from his head, stiff and pointed, real hair but never a soft or messy mop; ' +
-  'a small face with a small nose and mouth, smooth young skin with no wrinkles; a small, slender body with thin arms and legs; ' +
-  'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
-  'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ' +
+// how the characters themselves are rendered: the viewer picks Stylized or Realistic
+const STYLE_TEXT = {
+  stylized: 'Realism is for the world, the light and the materials, not the character designs. The characters keep their stylized designs exactly as drawn: ' +
+    'the same exaggerated proportions, head size, eye or goggle size, hair shape and body shape as in the frame and the maker\'s sketches. ' +
+    'Never turn them into realistic humans, human children or animals, and never into dolls, puppets, figurines or toys. ' +
+    'Render them the way a top VFX studio brings a stylized character into a live-action film (like Paddington or Detective Pikachu): ' +
+    'the design untouched, but with real, physically convincing skin, fabric, metal and wood, weight, contact shadows and natural light on them.',
+  realistic: 'Everything is ultra-realistic, characters included: render each character as a real, living being photographed on set, with natural ' +
+    'real-world proportions, real skin with pores and blemishes, real hair, real worn fabric, dirt and wear, like a gritty live-action period film. ' +
+    'Keep each character\'s identity, costume and signature features (named in the character notes), but never stylized, cartoon, animated, doll or toy-like.',
+};
+
+const GAGE_NOTE = {
+  stylized: 'Character notes: Gage is a stylized young tinkerer, not a realistic human boy. His design: an oversized, round head about as large as his whole torso; ' +
+    'huge round brass-framed goggles with smoked, darkly tinted lenses covering most of his face, his eyes only faintly visible behind them; ' +
+    'a few large, sharp, dramatic spikes of hair swept up and back from his head, stiff and pointed, real hair but never a soft or messy mop; ' +
+    'a small face with a small nose and mouth, smooth young skin with no wrinkles; a small, slender body with thin arms and legs; ' +
+    'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
+    'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ',
+  realistic: 'Character notes: Gage is a real, living young forest kid of about ten with slightly pointed ears, a wild mop of stiff, spiky brown hair, ' +
+    'a dirt-smudged face, worn brass goggles with smoked lenses (on his eyes or pushed up on his forehead), dusty, patched canvas work clothes, ' +
+    'and big hand-carved wooden clogs with visible grain. ',
+};
+const TOKEN_NOTE =
   'Token is a small, gentle forest creature of his own kind, not a bear, animal, robot, alien or person: a large, perfectly round, smooth head; ' +
   'two very large teardrop-shaped eyes, each about a quarter of the width of his face, the rounded end low and the soft point rising toward the inner brow, ' +
   'glossy and dark with warm brown irises and soft highlights; when he sleeps the closed lids keep that same large teardrop outline, never small human slits; ' +
@@ -56,19 +68,21 @@ const CHARACTER_NOTES =
 
 function clean(t) { return String(t || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160); }
 
-function promptFor(who, scene, clock) {
+function promptFor(who, scene, clock, style) {
   const lead = who === 'gage' ? 'This frame is from Gage\'s view; Gage is the main character. ' :
                who === 'token' ? 'This frame is from Token\'s view; Token is the main character. ' : '';
   const ctx = (scene ? 'What is happening: ' + clean(scene) + '. ' : '') + (clock ? 'Time and weather in the forest: ' + clean(clock) + '. ' : '');
-  return lead + ctx + PROMPT + ' ' + CHARACTER_NOTES;
+  return lead + ctx + PROMPT.replace('@@STYLE@@', STYLE_TEXT[style]) + ' ' + GAGE_NOTE[style] + TOKEN_NOTE;
 }
 
 // the maker's sketches, sent as extra reference images to models that take several images
 const SKETCHES = {
   token: ['sketches/token_portrait.jpg', 'sketches/token_turnaround.jpg'],
   gage: ['sketches/gage_film_ref.jpg', 'sketches/gage_goggles.jpg', 'sketches/gage_turnaround.jpg'],
+  gage_realistic: ['sketches/gage_real_ref.jpg'],
 };
 const REF_NOTE = {
+  gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, ears, hair, goggles, clothes, wooden clogs, same gritty photographic realism). Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background.',
   token: ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of Token: match his head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.',
   gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, make him look exactly like he does in that photo (same face, head shape, goggles, hair, clothes, wooden shoes, skin and materials, same live-action finish). The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp or background, and do not copy the pencil style.',
 };
@@ -76,7 +90,7 @@ const REF_NOTE = {
 // model choices; the page sends one of these keys (default first)
 const MODELS = {
   kontext: { url: 'https://fal.run/fal-ai/flux-pro/kontext', body: (img, aspect, prompt) => ({ prompt, image_url: img, aspect_ratio: aspect, guidance_scale: 4, output_format: 'jpeg', num_images: 1, safety_tolerance: '2' }) },
-  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', refs: true, body: (img, aspect, prompt, refs, refWho) => ({ prompt: refs.length ? prompt + (REF_NOTE[refWho] || '') : prompt, image_urls: [img].concat(refs), aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
+  nanopro: { url: 'https://fal.run/fal-ai/nano-banana-pro/edit', refs: true, body: (img, aspect, prompt, refs, refWho) => ({ prompt: refs.length ? prompt + (REF_NOTE[refWho] || REF_NOTE[String(refWho).split('_')[0]] || '') : prompt, image_urls: [img].concat(refs), aspect_ratio: aspect, resolution: '2K', output_format: 'jpeg', num_images: 1 }) },
   seedream: { url: 'https://fal.run/fal-ai/bytedance/seedream/v4/edit', body: (img, aspect, prompt) => ({ prompt, image_urls: [img], image_size: 'auto_2K', num_images: 1 }) },
 };
 
@@ -132,11 +146,13 @@ async function handle({ request, env }) {
   ]);
 
   const model = MODELS[body.model] ? body.model : 'nanopro';
+  const style = body.style === 'realistic' ? 'realistic' : 'stylized';
+  const refKey = style === 'realistic' && SKETCHES[body.who + '_realistic'] ? body.who + '_realistic' : body.who;
   const m = MODELS[model];
   const r = await fetch(m.url, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock), m.refs ? (SKETCHES[body.who] || []).map(f => new URL('/' + f, request.url).href) : [], body.who)),
+    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock, style), m.refs ? (SKETCHES[refKey] || SKETCHES[body.who] || []).map(f => new URL('/' + f, request.url).href) : [], refKey)),
   });
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
@@ -153,11 +169,11 @@ async function handle({ request, env }) {
     if (got.ok) {
       const buf = await got.arrayBuffer();
       id = day.replace(/-/g, '') + '-' + crypto.randomUUID().slice(0, 12);
-      await env.PHOTO_KV.put('img:' + id, buf, { metadata: { who: body.who || '', model, at: new Date().toISOString() } });
+      await env.PHOTO_KV.put('img:' + id, buf, { metadata: { who: body.who || '', style, model, at: new Date().toISOString() } });
       saved = '/api/photo/' + id + '.jpg';
     }
   } catch (e) { console.log('photo save failed', e && e.message); }
-  return json({ url: saved, id, model, left: ipMax === Infinity ? null : Math.max(0, ipMax - ipN - 1) });
+  return json({ url: saved, id, model, style, left: ipMax === Infinity ? null : Math.max(0, ipMax - ipN - 1) });
 }
 
 export function onRequest() {
