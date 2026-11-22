@@ -37,3 +37,10 @@ Not verified on screen: several new camera shots (bed close-up, over-shoulder, f
 - Camera: on the site (`site/photoreal.js`, `functions/api/photoreal.js`: Nano Banana Pro by default, Stylized/Realistic switch, Gage's look references in `site/sketches/gage_film_ref.jpg` and `gage_real_ref.jpg`) and in the artifact (frame travels in a link to `/develop`). Photos are kept in KV (`img:<id>`), listed by `/api/photos`. Daily photo limits are off unless `DAILY_LIMIT` / `IP_LIMIT` are set.
 - Claude pages cannot fetch other sites, but a plain link carrying up to at least 600 KB after `#` reaches tokensforest.com intact (tested on Cam's iPad).
 - Pending: `GOOGLE_CLIENT_ID` for visitor sign-in; Browser Cache TTL "Respect Existing Headers" (until then `index.html` must version `world-loader.js?v=N`).
+
+## Presentation mode and day films (2026-11-22)
+- `site/present.js` (loaded by world-loader.js on the public site; also published into the artifact as `present.js`) is the default view: a title card, then "Watch <name>'s day" plays the recorded narration over the 3D replays, with up to 5 realistic stills that slowly pan or zoom (Ken Burns: eased, alternating push-in / pan / pull-out, 1.4 s crossfades). "Dev view" (top-left) switches to the old full UI; the choice is remembered in localStorage `forestMode`. `#dev` / `#present` in the URL force a mode.
+- Only days whose exact telling has a recording in `audio/` are offered. The device's own voice is gone from both copies of the page; an unrecorded day says it is still being recorded.
+- The world module exposes `window.__forest` (play, stop, on, time, audio, sents, moment, days, fnv) for present.js.
+- Stills: `tools/film/film.py` (frames → pick → develop), output `site/film/<who>-<day>-<n>.jpg` + `<who>-<day>.json` `{h, shots:[{n, src}]}`. The narration sentence must NOT be sent to /api/photoreal as `scene` (the model paints the words in). The endpoint needs the site's Origin header.
+- Nightly scheduled task "Nightly day films (Token's Forest)" (trig_015PnQsD4KjH5sbnLp5H5sb2, 1:41 AM Chicago) follows `tools/film/NIGHTLY.md`. Costs about $1.50 per night (10 photos).
