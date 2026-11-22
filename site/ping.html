@@ -1,0 +1,13 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Forest link test</title><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font:16px system-ui;background:#1d1916;color:#f1e7d6;padding:24px">
+<h3>Token's Forest link test</h3><p id="s">Waiting for a message from the Claude page…</p>
+<script>
+// TEMPORARY: receives a message from the Claude test page, logs it on the site, and answers back.
+window.addEventListener('message', function(e){
+  var s = document.getElementById('s'); s.textContent = 'Got a message from ' + e.origin + ' (' + String(e.data && e.data.size || 0) + ' bytes). Logging it…';
+  fetch('/api/ping?t=popup-relay', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({from: e.origin, size: e.data && e.data.size, sample: String(e.data && e.data.sample || '').slice(0, 80)})})
+    .then(function(){ s.textContent = 'Message received and logged on tokensforest.com. You can close this window.'; try { e.source.postMessage({ack: true}, '*'); } catch (err) {} })
+    .catch(function(err){ s.textContent = 'Got the message but could not log it: ' + err.message; });
+});
+if (window.opener) { try { window.opener.postMessage({ready: true}, '*'); } catch (e) {} }
+</script></body></html>
