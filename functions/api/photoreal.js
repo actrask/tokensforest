@@ -37,7 +37,7 @@ const PROMPT =
   'When the sun is behind or beside him, give him a hot, bright, golden edge light: a crisp glowing rim that clearly outlines his whole silhouette, ' +
   'the hair blazing with light, a bright line along his ears, cheek, neck, shoulders, back, arms, hands and shoes, light catching the goggle rims, ' +
   'strong enough to be the brightest edge in the frame and to pop him off the background. Fill his face and front with warm bounce light from the sunlit ground ' +
-  'so his expression and clothes read clearly. Never dark, murky, flat or filled in, never a silhouette; he is the most clearly lit, most readable thing in the shot. ' +
+  'so his expression and clothes read clearly. Never dark, murky, flat or filled in, never a silhouette; he is the most clearly lit, most readable thing in the shot. Being the star changes only his light, never his size, position or distance: he stays exactly as big and exactly where he is in the frame. ' +
   'Warmth: the whole image feels warm, the golden, honey-colored warmth of sunlight in a forest: warm highlights, warm haze, warm skin, golden light on wood and water, ' +
   'with only gentle cool tones in the deepest shadows. Never cold, gray, blue or desaturated. ' +
   'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with needles and debris. ' +
