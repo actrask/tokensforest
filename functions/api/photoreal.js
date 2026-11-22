@@ -24,6 +24,9 @@ const PROMPT =
   'Use only the light sources already in the frame; never add fires, candles, lamps or glows that are not there. ' +
   'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
   'and never add vehicles, boats or new furniture. ' +
+  'NOTHING PASSES THROUGH ANYTHING. The frame comes from a game engine, so a foot may sink into a log, a leg into a rock, a hand into a table, a body into the ground or a staff through a wall. ' +
+  'Repair every such intersection the way a real photograph would show it: feet rest on top of the ground, rock or log, a body stands in front of or beside an object, hands touch surfaces without entering them, ' +
+  'and objects are whole and solid. Keep each character in the same place and pose; only fix the contact. ' +
   '@@STYLE@@ ' +
   'Everything is filmed at full scale. ' +
   'Normal cinema depth of field for a full-size scene, background softly out of focus; never macro, tilt-shift, diorama or miniature-looking. ' +
@@ -73,7 +76,7 @@ const TOKEN_NOTE =
   'Token is a small, gentle forest creature of his own kind, not a bear, animal, robot, alien or person: a large, perfectly round, smooth head; ' +
   'two very large teardrop-shaped eyes, each about a quarter of the width of his face, the rounded end low and the soft point rising toward the inner brow, ' +
   'glossy and dark with warm brown irises and soft highlights; when he sleeps the closed lids keep that same large teardrop outline, never small human slits; ' +
-  'no ears, no fur, no hair, no visible nose; smooth, pale, softly matte living skin; a thin neck; a small rounded shell on his back like a turtle\'s; ' +
+  'no ears, no fur, no hair, no visible nose. His skin is textured like a real turtle\'s, never smooth plastic, rubber or grey alien skin: fine pebbled scales, slightly leathery and dry, in warm pale sand and khaki tones with subtle olive mottling, the scales finest on his head and face and larger, more defined on his neck, arms and legs, with soft creases at the joints; a thin neck; on his back a small rounded shell like a real turtle\'s, with distinct scute plates, fine growth rings and natural horn-brown and amber tones; ' +
   'slender arms and legs; large, flat, rounded feet; often a long slender pale-wood staff. When he is in bed, only his round smooth head shows above the blankets.';
 
 function clean(t) { return String(t || '').replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160); }
