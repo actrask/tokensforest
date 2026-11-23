@@ -86,13 +86,68 @@ def pick(who, day, spec):   # e.g. 1=a,4=c
             if x['n'] == n: x['frame'] = x['cands']['abc'.index(c)]
     json.dump(plan, open(pf, 'w'), indent=1); sheet(who, day)
 
+# fixed camera setups for directed shots: [from x,y,z], [look-at x,y,z], fov.  Token's fire (3.6, 2.2), the creek (x~15), Gage's camp (23.5, 4.5)
+CAMS = {
+    'across_to_gage':  ([4.6, 1.5, 3.4], [23.5, 1.0, 4.5], 38),   # from just behind Token's fire, over the creek to Gage's camp
+    'across_to_token': ([22.0, 1.5, 4.0], [3.6, 0.9, 2.2], 38),   # the reverse: from Gage's camp back over the creek to Token's fire
+    'token_camp':      ([8.5, 3.0, 8.5], [2.0, 0.6, 0.5], 46),    # wide of Token's camp, burrow and fire
+    'gage_camp':       ([19.0, 2.6, 10.0], [23.5, 0.7, 4.5], 46), # wide of Gage's camp, bench and tent
+    'creek':           ([10.5, 2.2, 5.5], [15.2, 0.2, -3.5], 44), # along the creek, the pool and the stepping stones
+    'cliff':           ([-36.0, 3.0, 2.0], [-50.0, -6.0, 0.0], 50),  # the west edge, looking out to sea
+}
+CAM_JS = """(c => { const C = window.__cam; window.__shotCam = c;
+  if (!C.__shotPatched){ const orig = C.updateMatrixWorld.bind(C); C.__shotPatched = true;
+    C.updateMatrixWorld = function(f){ const s = window.__shotCam; if (s){ C.position.set(s[0][0], s[0][1], s[0][2]); C.up.set(0, 1, 0); C.lookAt(s[1][0], s[1][1], s[1][2]);
+      if (C.fov !== s[2]){ C.fov = s[2]; C.updateProjectionMatrix(); } } return orig(f); }; } })"""
+
+def shoot(who, day, listfile, wpath):
+    """Directed shots: listfile is JSON [{n, cam, shot, cast}] written from the beats. cam is a CAMS name or 'replay' (keep the director's
+    angle); shot is the written shot (size, angle, who is in frame, what they do and look at); cast is ['token'], ['gage'] or both."""
+    plan = json.load(open(listfile))[:5]
+    world = json.load(open(wpath)); text, beats = telling(world, who, day); h = fnv(text)
+    if not os.path.exists(os.path.join(SITE, 'audio', '%s-%s-%s.mp3' % (who, day, h))): sys.exit('no recording for %s %s: not filming it' % (who, day))
+    os.makedirs(FR, exist_ok=True); tmp = os.path.join(SITE, '_film_world.json'); shutil.copy(wpath, tmp)
+    page = open(os.path.join(SITE, 'index.html'), encoding='utf-8').read().replace('world-loader.js', 'world-loader.js?film=1&w=_film_world.json', 1)
+    open(os.path.join(SITE, '_film.html'), 'w', encoding='utf-8').write(page)
+    h_ = functools.partial(http.server.SimpleHTTPRequestHandler, directory=SITE); h_.log_message = lambda *a: None
+    srv = socketserver.TCPServer(('127.0.0.1', 0), h_); threading.Thread(target=srv.serve_forever, daemon=True).start()
+    from playwright.sync_api import sync_playwright
+    out = []
+    try:
+        with sync_playwright() as p:
+            chrome = '/usr/bin/google-chrome' if os.path.exists('/usr/bin/google-chrome') else None
+            b = p.chromium.launch(executable_path=chrome, args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
+            pg = b.new_page(viewport={'width': 1600, 'height': 900})
+            pg.add_init_script("try{localStorage.setItem('forestWelcomed','1');localStorage.setItem('forestMode','dev')}catch(e){}")
+            pg.goto('http://127.0.0.1:%d/_film.html#%s&nowelcome&dev' % (srv.server_address[1], who), timeout=240000)
+            for _ in range(120):
+                time.sleep(2)
+                if pg.evaluate("!!(window.__forest && window.__cam && Object.keys(window.__forest.days('%s')).length)" % who): break
+            time.sleep(15); pg.add_style_tag(content='body>*:not(#gl){visibility:hidden!important} #gl{visibility:visible!important}')
+            for x in plan:
+                n = int(x['n']); pg.evaluate("window.__shotCam = null"); pg.evaluate("window.__forest.moment(%s, %s)" % (json.dumps(who), json.dumps(beats[n]['at'])))
+                time.sleep(12)
+                if x.get('cam', 'replay') != 'replay': c = CAMS[x['cam']] if isinstance(x['cam'], str) else x['cam']; pg.evaluate(CAM_JS + '(%s)' % json.dumps(list(c))); time.sleep(3)
+                f = os.path.join(FR, '%s-%s-%d.jpg' % (who, day, n)); pg.screenshot(path=f, type='jpeg', quality=92, timeout=180000)
+                out.append({'n': n, 'at': beats[n]['at'], 's': beats[n]['s'], 'cands': [f], 'frame': f, 'cam': x.get('cam', 'replay'), 'shot': x['shot'], 'cast': x.get('cast') or [who]})
+                print('frame', n, x.get('cam'))
+            b.close()
+    finally:
+        srv.shutdown()
+        for q in ('_film.html', '_film_world.json'):
+            try: os.remove(os.path.join(SITE, q))
+            except OSError: pass
+    json.dump({'who': who, 'day': day, 'h': h, 'shots': out}, open(os.path.join(FR, '%s-%s.json' % (who, day)), 'w'), indent=1); sheet(who, day)
+
 def develop(who, day):
     plan = json.load(open(os.path.join(FR, '%s-%s.json' % (who, day)))); os.makedirs(OUT, exist_ok=True); shots = []
     for s in plan['shots']:
         dst = os.path.join(OUT, '%s-%s-%d.jpg' % (who, day, s['n']))
         if not os.path.exists(dst):
             img = 'data:image/jpeg;base64,' + base64.b64encode(open(s['frame'], 'rb').read()).decode()
-            body = json.dumps({'image': img, 'who': who, 'style': 'realistic', 'aspect': '16:9'}).encode()   # (no narration text: the model would paint the words in)
+            req = {'image': img, 'who': who, 'style': 'realistic', 'aspect': '16:9'}
+            if s.get('shot'): req.update({'shot': s['shot'], 'cast': s.get('cast') or [who]})   # a directed shot: the narration sets the action
+            body = json.dumps(req).encode()   # (no narration text: the model would paint the words in)
             hdr = {'Content-Type': 'application/json', 'User-Agent': 'forest-film/1', 'Origin': API}
             if os.environ.get('FOREST_ADMIN'): hdr['X-Forest-Admin'] = os.environ['FOREST_ADMIN']
             for tries in range(3):
@@ -139,6 +194,7 @@ def animate(who, day, n, prompt):
 if __name__ == '__main__':
     if sys.argv[1] == 'frames': frames(sys.argv[2], sys.argv[3], [int(x) for x in sys.argv[4].split(',')], sys.argv[5] if len(sys.argv) > 5 else os.path.join(SITE, 'world.json'))
     elif sys.argv[1] == 'pick': pick(sys.argv[2], sys.argv[3], sys.argv[4])
+    elif sys.argv[1] == 'shoot': shoot(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else os.path.join(SITE, 'world.json'))
     elif sys.argv[1] == 'animate': animate(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5])
     elif sys.argv[1] == 'sheet': sheet(sys.argv[2], sys.argv[3])
     else: develop(sys.argv[2], sys.argv[3])

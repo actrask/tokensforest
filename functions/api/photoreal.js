@@ -102,7 +102,7 @@ const DIRECTED =
   'Place subjects on the thirds, use foreground elements for depth, and put the camera at the height the shot names. The action of the line must read at a glance: ' +
   'a raised open hand is clearly a wave, a held-up object is clearly shown. Faces show a quiet, specific feeling that fits the moment, never a blank stare. ' +
   'Nothing passes through anything: feet rest on the ground, hands touch objects without entering them. ' +
-  'Light comes only from the sources in image 1, shaped like a feature film: the main character gets a clear rim or key light from the strongest source, ' +
+  'Light comes only from the sources in image 1, shaped like a feature film: the main character gets a clear warm rim or key light from the strongest source (light only: fire stays in the fire, never on a character), ' +
   'the grade is warm and rich, blacks are deep but never crushed. No text, letters, signs or watermarks. ';
 const CAST_REFS = { gage: ['sketches/gage_real_ref.jpg'], token: ['sketches/token_portrait.jpg', 'sketches/token_turnaround.jpg'] };
 function directed(shot, cast, aspectOk) {
@@ -112,7 +112,9 @@ function directed(shot, cast, aspectOk) {
     parts.push(w === 'gage' ? 'IMAGE ' + a + ' is the approved look for Gage: he must look exactly like that kid (face, pointed ears, spiky hair, goggles, clothes, wooden clogs) but take his pose and expression from THE SHOT.'
                             : 'IMAGE' + (a === b ? ' ' + a : 'S ' + a + '-' + b) + ' are the maker\'s pencil sketches of Token: match his head shape, eye shape and size and proportions, not the pencil style.');
   });
-  const notes = (cast.includes('gage') ? GAGE_NOTE.realistic : '') + (cast.includes('token') ? 'Token: ' + TOKEN_NOTE : '');
+  const notes = (cast.includes('gage') ? GAGE_NOTE.realistic : '') + (cast.includes('token') ? 'Token: ' + TOKEN_NOTE +
+    ' Realism never changes Token\'s design: he is never a grey or green alien, never a lizard or a human, never skinny with a big skull. He keeps his perfectly round head, ' +
+    'his huge glossy teardrop eyes, his turtle-textured sand-colored skin and his rounded turtle shell in every shot, whatever the light. ' : '');
   return { refs: imgs, prompt: DIRECTED.replace('@@REFS@@', parts.join(' ')).replace('@@SHOT@@', String(shot).replace(/[\u0000-\u001f<>]/g, ' ').slice(0, 1400)) + STYLE_TEXT.realistic + ' ' + notes };
 }
 
