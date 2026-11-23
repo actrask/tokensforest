@@ -89,6 +89,33 @@ function promptFor(who, scene, clock, style) {
   return lead + ctx + PROMPT.replace('@@STYLE@@', STYLE_TEXT[style]) + ' ' + GAGE_NOTE[style] + TOKEN_NOTE;
 }
 
+/* Directed shots (day films): the narration says what happens; the 3D frame only says where and when.
+   The film tool writes a shot for each beat (size, angle, who is in frame, what they do and look at) and names the cast. */
+const DIRECTED =
+  'You are the director of photography on a live-action feature film. Make ONE frame of the film: the shot described under THE SHOT. ' +
+  'IMAGE 1 is a game-engine frame of this place at this moment. Use it ONLY as the location: the terrain, the creek and its stepping stones, the giant trees, ' +
+  'the camps, tents, workbenches and their layout, the props, the time of day, the sky and every light source in it (fires, lanterns, sun or moon). ' +
+  'Do NOT copy its camera angle, its framing or the characters\' poses: compose the new shot. Do not invent new buildings, places or light sources. ' +
+  '@@REFS@@ THE SHOT: @@SHOT@@ ' +
+  'FILM GRAMMAR: nobody looks into the lens; the camera is an unseen observer. Each character looks at exactly what the shot names (the other character, the water, ' +
+  'the fish, the object in his hands), and when two characters face each other their eyelines meet across the frame. Leave look room on the side each one faces. ' +
+  'Place subjects on the thirds, use foreground elements for depth, and put the camera at the height the shot names. The action of the line must read at a glance: ' +
+  'a raised open hand is clearly a wave, a held-up object is clearly shown. Faces show a quiet, specific feeling that fits the moment, never a blank stare. ' +
+  'Nothing passes through anything: feet rest on the ground, hands touch objects without entering them. ' +
+  'Light comes only from the sources in image 1, shaped like a feature film: the main character gets a clear rim or key light from the strongest source, ' +
+  'the grade is warm and rich, blacks are deep but never crushed. No text, letters, signs or watermarks. ';
+const CAST_REFS = { gage: ['sketches/gage_real_ref.jpg'], token: ['sketches/token_portrait.jpg', 'sketches/token_turnaround.jpg'] };
+function directed(shot, cast, aspectOk) {
+  const imgs = [], parts = []; let n = 2;
+  cast.forEach(w => {
+    const f = CAST_REFS[w]; if (!f) return; const a = n, b = n + f.length - 1; n += f.length; imgs.push(...f);
+    parts.push(w === 'gage' ? 'IMAGE ' + a + ' is the approved look for Gage: he must look exactly like that kid (face, pointed ears, spiky hair, goggles, clothes, wooden clogs) but take his pose and expression from THE SHOT.'
+                            : 'IMAGE' + (a === b ? ' ' + a : 'S ' + a + '-' + b) + ' are the maker\'s pencil sketches of Token: match his head shape, eye shape and size and proportions, not the pencil style.');
+  });
+  const notes = (cast.includes('gage') ? GAGE_NOTE.realistic : '') + (cast.includes('token') ? 'Token: ' + TOKEN_NOTE : '');
+  return { refs: imgs, prompt: DIRECTED.replace('@@REFS@@', parts.join(' ')).replace('@@SHOT@@', String(shot).replace(/[\u0000-\u001f<>]/g, ' ').slice(0, 1400)) + STYLE_TEXT.realistic + ' ' + notes };
+}
+
 // the maker's sketches, sent as extra reference images to models that take several images
 const SKETCHES = {
   token: ['sketches/token_portrait.jpg', 'sketches/token_turnaround.jpg'],
@@ -163,10 +190,13 @@ async function handle({ request, env }) {
   const style = body.style === 'realistic' ? 'realistic' : 'stylized';
   const refKey = style === 'realistic' && SKETCHES[body.who + '_realistic'] ? body.who + '_realistic' : body.who;
   const m = MODELS[model];
+  const cast = Array.isArray(body.cast) ? body.cast.filter(w => w === 'token' || w === 'gage').slice(0, 2) : [];
+  const D = typeof body.shot === 'string' && body.shot.trim() && m.refs ? directed(body.shot, cast.length ? cast : [body.who]) : null;   // a directed day-film shot
   const r = await fetch(m.url, {
     method: 'POST',
     headers: { Authorization: `Key ${env.FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(m.body(image, aspect, promptFor(body.who, body.scene, body.clock, style), m.refs ? (SKETCHES[refKey] || SKETCHES[body.who] || []).map(f => new URL('/' + f, request.url).href) : [], refKey)),
+    body: JSON.stringify(D ? m.body(image, aspect, D.prompt, D.refs.map(f => new URL('/' + f, request.url).href), null)
+                           : m.body(image, aspect, promptFor(body.who, body.scene, body.clock, style), m.refs ? (SKETCHES[refKey] || SKETCHES[body.who] || []).map(f => new URL('/' + f, request.url).href) : [], refKey)),
   });
   if (!r.ok) {
     const detail = (await r.text()).slice(0, 300);
@@ -183,7 +213,7 @@ async function handle({ request, env }) {
     if (got.ok) {
       const buf = await got.arrayBuffer();
       id = day.replace(/-/g, '') + '-' + crypto.randomUUID().slice(0, 12);
-      await env.PHOTO_KV.put('img:' + id, buf, { metadata: { who: body.who || '', style, model, at: new Date().toISOString() } });
+      await env.PHOTO_KV.put('img:' + id, buf, { metadata: { who: body.who || '', style: D ? 'directed' : style, model, at: new Date().toISOString() } });
       saved = '/api/photo/' + id + '.jpg';
     }
   } catch (e) { console.log('photo save failed', e && e.message); }
