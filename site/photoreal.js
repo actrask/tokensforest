@@ -73,7 +73,7 @@
       });
   }
   function setButtons(){ bSave.style.display = photo ? '' : 'none'; bCompare.style.display = (photo && original) ? '' : 'none'; }
-  bClose.onclick = function(){ shade.classList.remove('on'); };
+  bClose.onclick = function(){ shade.classList.remove('on'); var h = window.__forestCamera; if (h && h.onClose) { var f = h.onClose; h.onClose = null; f(); } };
   bCompare.onclick = function(){ showing = showing === 'photo' ? 'orig' : 'photo'; img.src = showing === 'photo' ? photo : original; bCompare.textContent = showing === 'photo' ? 'Show original' : 'Show photo'; };
   bSave.onclick = function(){
     fetch(photo).then(function(r){ return r.blob(); }).then(function(b){ var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'tokens-forest-' + new Date().toISOString().slice(0,16).replace(/[:T]/g,'-') + '.jpg'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 2000); })
@@ -141,7 +141,7 @@
         LIST = [p]; showAt(0);
         fetchAll().then(function(all){ LIST = [p].concat(all.filter(function(x){ return x.url !== u; })); if (IDX === 0 && photo === u) showAt(0); }); })
       .catch(function(e){ frame.classList.add('dev'); msg.textContent = e.message || 'The photo did not develop.'; msg.style.display = 'flex'; })
-      .then(function(){ busy = false; if (REDO) { REDO = false; if (LAST && style !== STYLE) develop(LAST); } });
+      .then(function(){ busy = false; var h = window.__forestCamera; if (h && h.onDone) { var f = h.onDone; h.onDone = null; f(!!photo); } if (REDO) { REDO = false; if (LAST && style !== STYLE) develop(LAST); } });
   }
   // Stylized | Realistic switch in the viewer: remembered for next time; flipping it on a fresh photo re-develops that same frame
   var sw = el('div', {id:'prStyle'}), sS = el('button', {'class':'btn light', 'data-s':'stylized'}, 'Stylized'), sR = el('button', {'class':'btn light', 'data-s':'realistic'}, 'Realistic');
@@ -155,6 +155,9 @@
     if (LAST && cur && cur.fresh && cur.style !== STYLE) develop(LAST);
   });
 
+  // presentation mode takes photos through this: shoot(onDone(ok), onClose), close()
+  window.__forestCamera = { shoot: function(done, closed){ if (busy) return false; window.__forestCamera.onDone = done; window.__forestCamera.onClose = closed; shoot(); return true; },
+    close: function(){ bClose.onclick(); }, busy: function(){ return busy; } };
   function init(){
     document.body.appendChild(shade); bar.insertBefore(sw, bar.firstChild); paintStyle();
     var b = el('button', {'class':'btn', id:'photoBtn', title:'Photoreal photo of this view', 'aria-label':'Take a photoreal photo of this view'},

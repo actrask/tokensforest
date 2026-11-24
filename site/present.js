@@ -10,7 +10,7 @@
   if (/(^|[#&])dev\b/.test(location.hash)) mode = 'dev'; if (/(^|[#&])present\b/.test(location.hash)) mode = 'present';
 
   var css = document.createElement('style'); css.textContent = [
-    'body.present>*:not(#gl):not(#cutHold):not(#cutBlack):not(.bars):not(#pres):not(#presKB):not(#presCap):not(#presTog):not(#presStop):not(script):not(style){visibility:hidden!important}',
+    'body.present>*:not(#gl):not(#prShade):not(#cutHold):not(#cutBlack):not(.bars):not(#pres):not(#presKB):not(#presCap):not(#presTog):not(#presStop):not(script):not(style){visibility:hidden!important}',
     '#pres{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(10,12,10,.35),rgba(6,8,6,.86));color:#f4ead2;font-family:Georgia,"Iowan Old Style",serif;opacity:0;transition:opacity 1.2s}',
     'body.present #pres.show{display:flex} #pres.vis{opacity:1}',
     '#pres .in{max-width:640px;padding:28px 26px;text-align:center}',
@@ -31,13 +31,20 @@
     'body.present.playing #presCap{opacity:1}',
     '#presTog,#presStop{position:fixed;z-index:45;top:12px;font:13px/1 -apple-system,system-ui,sans-serif;padding:8px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.38);color:#fff;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}',
     '#presTog{left:12px} #presStop{right:12px;display:none} body.present.playing #presStop{display:block}',
-    'body:not(.present) #presTog{top:auto;bottom:16px;left:14px}'
+    'body:not(.present) #presTog{top:auto;bottom:16px;left:14px}',
+    '#presCam{position:fixed;z-index:45;right:18px;bottom:calc(4.2vh + 6px);width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.42);color:#fff;cursor:pointer;display:none;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 10px rgba(0,0,0,.35)}',
+    'body.nocam #presCam{display:none!important} body.present.playing #presCam{display:flex} #presCam:active{transform:scale(.94)} #presCam.wait{opacity:.5;cursor:default}',
+    '#presCap{max-width:min(880px,72vw)!important}',
+    'body.present.paused #presCap::after{content:"  \u275a\u275a";opacity:.7}'
   ].join('\n'); document.head.appendChild(css);
 
   var pres = document.createElement('div'); pres.id = 'pres'; document.body.appendChild(pres);
   var kb = document.createElement('div'); kb.id = 'presKB'; document.body.appendChild(kb);
   var cap = document.createElement('div'); cap.id = 'presCap'; document.body.appendChild(cap);
   var tog = document.createElement('button'); tog.id = 'presTog'; document.body.appendChild(tog);
+  var camB = document.createElement('button'); camB.id = 'presCam'; camB.title = 'Take a photo of this moment'; camB.setAttribute('aria-label', 'Take a photo of this moment');
+  camB.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/></svg>';
+  document.body.appendChild(camB);
   var stopB = document.createElement('button'); stopB.id = 'presStop'; stopB.textContent = '✕  End'; document.body.appendChild(stopB);
 
   function F(){ return window.__forest; }
@@ -81,15 +88,17 @@
     [[1.14, -3.5, -.5], [1.14, 3.5, 0]]];   // pan right to left
   function tf(f){ return 'translate(' + f[1] + '%,' + f[2] + '%) scale(' + f[0] + ')'; }
   function play(who, day){ var f = F(), r = (READY[who] || []).filter(function(x){ return x.day === day; })[0]; if (!f || !r) return;
-    stop(true); hideCard(); document.body.classList.add('playing');
+    stop(true); hideCard(); document.body.classList.add('playing'); document.body.classList.toggle('nocam', !window.__forestCamera);
     P = {who:who, day:day, t:r.m.t, cur:-1, shots:{}, imgs:{}, k:0, shown:null};
-    fetch('film/' + who + '-' + day + '.json', {cache:'no-store'}).then(function(x){ return x.ok ? x.json() : null; }).then(function(j){
+    /* pre-made stills are off: the viewer takes the photos with the camera button */
+    if (window.__presentFilm) fetch('film/' + who + '-' + day + '.json', {cache:'no-store'}).then(function(x){ return x.ok ? x.json() : null; }).then(function(j){
       if (!P || P.day !== day || !j || j.h !== r.key.split('-').pop()) return;
       j.shots.slice(0, 5).forEach(function(s){ var im = new Image(); im.decoding = 'async'; im.src = s.src; P.shots[s.n] = im;
         if (s.clip){ var v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; v.src = s.clip; v.poster = s.src; im.__clip = v; } }); }).catch(function(){});
     setTimeout(function(){ if (P && P.day === day) f.play(who, day); }, 50);
     P.iv = setInterval(tick, 200); }
   function tick(){ var f = F(); if (!P || !f) return; var A = f.audio, ct = A.currentTime || 0;
+    if (P.holding) return;
     if (P.started && !f.on()){ var w = P.who, d = P.day; stop(true); endCard(w, d); return; }
     if (f.on() && ct > 0) P.started = true;
     var i = 0; while (i + 1 < P.t.length && P.t[i + 1] <= ct + 0.05) i++;
@@ -108,6 +117,14 @@
   function stop(quiet){ var f = F(); if (P){ clearInterval(P.iv); P = null; } if (f && f.on()) f.stop();
     document.body.classList.remove('playing'); kb.classList.remove('on'); setTimeout(function(){ if (!kb.classList.contains('on')) kb.innerHTML = ''; }, 1500); cap.textContent = ''; }
   stopB.onclick = function(){ stop(); title(); showCard(); };
+  /* the camera: the telling pauses while the photo develops, and picks up again when the photo is closed (or a few seconds after it appears) */
+  camB.onclick = function(){ var f = F(), C = window.__forestCamera; if (!P || !f || !C || C.busy() || P.holding) return;
+    var A = f.audio; P.holding = true; try { A.pause(); } catch (e) {} document.body.classList.add('paused'); camB.classList.add('wait');
+    var resumed = false, timer = null, here = P;
+    function resume(){ if (resumed) return; resumed = true; clearTimeout(timer); camB.classList.remove('wait'); document.body.classList.remove('paused');
+      if (P === here){ P.holding = false; try { var pr = A.play(); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {} } }
+    var ok = C.shoot(function(good){ timer = setTimeout(function(){ if (!resumed){ try { C.close(); } catch (e) {} resume(); } }, good ? 6000 : 3000); }, resume);
+    if (!ok) resume(); };
 
   function setMode(m){ mode = m; try { localStorage.setItem(DEV_KEY, m); } catch (e) {}
     if (m === 'dev'){ stop(); document.body.classList.remove('present'); hideCard(); tog.textContent = '▶ Presentation'; try { localStorage.setItem('forestWelcomed', '1'); } catch (e) {} }
