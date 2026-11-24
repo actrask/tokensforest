@@ -424,10 +424,10 @@ function patchOccFade(m){
   m.needsUpdate = true; return m; }
 patchOccFade(normalMatClip);
 const post = new THREE.ShaderMaterial({
-  uniforms:{tColor:{value:rtC.texture}, tDepth:{value:rtC.depthTexture}, tNormal:{value:rtN.texture}, tBloom:{value:null}, tPart:{value:null}, cine:{value:0}, dusk:{value:0}, res:{value:new THREE.Vector2()}, near:{value:camera.near}, far:{value:camera.far}, k:{value:1}, night:{value:0}, sunAmt:{value:1}, invProj:{value:new THREE.Matrix4()}, camWorld:{value:new THREE.Matrix4()}, viewProj:{value:new THREE.Matrix4()}, galM:{value:new THREE.Matrix3()}, tStars:{value:null}, sunW:{value:new THREE.Vector3(0,1,0)}, moonW:{value:new THREE.Vector3(0,0.4,-1)}, moonVis:{value:0}, time:{value:0}, veil:{value:new THREE.Vector2(1,1)}, cavePos:{value:new THREE.Vector2(-37,-24.6)}, dofAmt:{value:0}, focusD:{value:5}, aoScale:{value:500}, aoAmt:{value:0.6}, hazeCol:{value:new THREE.Color(0.06,0.075,0.12)}, hazeDen:{value:0.07}, hazeStart:{value:3}, hazeFloor:{value:0}, expo:{value:1.3}},
+  uniforms:{tColor:{value:rtC.texture}, tDepth:{value:rtC.depthTexture}, tNormal:{value:rtN.texture}, tBloom:{value:null}, tPart:{value:null}, cine:{value:0}, dusk:{value:0}, res:{value:new THREE.Vector2()}, near:{value:camera.near}, far:{value:camera.far}, k:{value:1}, night:{value:0}, sunAmt:{value:1}, invProj:{value:new THREE.Matrix4()}, camWorld:{value:new THREE.Matrix4()}, viewProj:{value:new THREE.Matrix4()}, galM:{value:new THREE.Matrix3()}, tStars:{value:null}, sunW:{value:new THREE.Vector3(0,1,0)}, moonW:{value:new THREE.Vector3(0,0.4,-1)}, moonVis:{value:0}, time:{value:0}, veil:{value:new THREE.Vector2(1,1)}, cavePos:{value:new THREE.Vector2(-37,-24.6)}, dofAmt:{value:0}, focusD:{value:5}, aoScale:{value:500}, aoAmt:{value:0.6}, hazeCol:{value:new THREE.Color(0.06,0.075,0.12)}, duskAir:{value:0}, hazeDen:{value:0.07}, hazeStart:{value:3}, hazeFloor:{value:0}, expo:{value:1.3}},
   vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }`,
   fragmentShader:`
-  uniform sampler2D tColor, tDepth, tNormal, tBloom, tPart; uniform vec2 res; uniform float near, far, k, night, sunAmt, moonVis, time, cine, dusk; uniform mat4 invProj, camWorld; uniform vec2 veil, cavePos; uniform float dofAmt, focusD, aoScale, aoAmt, hazeDen, hazeStart, hazeFloor, expo; uniform float wxCloud, wxRain, wxSnow, wxFlash, wxWet, wxFrost, wxCover, wxWind; uniform mat4 viewProj; uniform vec3 hazeCol; uniform mat3 galM; uniform sampler2D tStars; uniform vec3 sunW, moonW; varying vec2 vUv;
+  uniform sampler2D tColor, tDepth, tNormal, tBloom, tPart; uniform vec2 res; uniform float near, far, k, night, sunAmt, moonVis, time, cine, dusk; uniform mat4 invProj, camWorld; uniform vec2 veil, cavePos; uniform float dofAmt, focusD, aoScale, aoAmt, hazeDen, hazeStart, hazeFloor, expo, duskAir; uniform float wxCloud, wxRain, wxSnow, wxFlash, wxWet, wxFrost, wxCover, wxWind; uniform mat4 viewProj; uniform vec3 hazeCol; uniform mat3 galM; uniform sampler2D tStars; uniform vec3 sunW, moonW; varying vec2 vUv;
   vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0., 1.); }
   float lin(float d){ float z=d*2.-1.; return (2.*near*far)/(far+near-z*(far-near)); }
   float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
@@ -550,7 +550,9 @@ const post = new THREE.ShaderMaterial({
     { vec3 P0 = vv.xyz * (dz0 / max(-vv.z, 1e-3)); vec3 wp0 = (camWorld * vec4(P0, 1.)).xyz;
       float gf = exp(-max(wp0.y - hazeFloor, 0.)*0.25);
       float hz = (1. - exp(-max(dz0 - hazeStart, 0.)*hazeDen*(0.5/3.0)*(0.5 + 0.5*gf))) * 0.2 * (1. - isSky);   /* (and the air itself thinner again: 0.285 -> 0.2) */   /* the air is a third weaker again (0.425 -> 0.285) */   /* same strength, three times the reach: the air now takes 200% more distance to build up, so the farthest trunks no longer stand pale against a dark sky */   /* the air is half as strong as it was: far trunks stay closer to the sky's tone instead of standing out pale against it */   // (the air builds up half as fast with distance, and is 15% lighter overall)
-      col = mix(col, hazeCol, hz); }
+      vec3 hzC = hazeCol;
+      if (duskAir > 0.001){ SKY_FLAT = 1.; vec3 hs = skyColor(normalize(vec3(dir.x, max(dir.y, 0.1), dir.z))); SKY_FLAT = 0.; hzC = mix(hazeCol, hs*0.8, duskAir*0.85); }   /* at sundown the air is lit by the sky: haze takes the horizon's color along each line of sight (orange toward the sun, violet away from it), not a neutral gray */
+      col = mix(col, hzC, hz); }
     // filmic response at night: highlights roll off, blacks sit just above the floor
     col = mix(col, aces(col*expo) + hazeCol*0.18, night);
     float lum = dot(col, vec3(0.299,0.587,0.114));
@@ -608,9 +610,12 @@ const post = new THREE.ShaderMaterial({
       c = mix(c, nb, night*0.9*(1. - fogf)); }
     { vec3 dk = vec3(0.2,0.13,0.16) + vec3(0.8,0.87,0.84)*smoothstep(0.16, 0.6, lum), wm = mix(vec3(1.), vec3(1.0,0.8,0.58), smoothstep(0.5, 0.9, lum));
       c *= mix(vec3(1.), dk*wm, dusk); }   // sundown at the edge: what the low sun doesn't reach goes to a deep warm wash (figures read as shapes against the sky), what it does reach glows orange
+    if (duskAir > 0.001){ // dusk: the light left is the sky's, so surfaces take the horizon's hue in the direction they're seen (warm toward the sun, violet away), the shaded sides drop toward it and the lit ones keep their brightness; the pencil goes on after, so detail stays
+      SKY_FLAT = 1.; vec3 hz2 = skyColor(normalize(vec3(dir.x, 0.35, dir.z))); SKY_FLAT = 0.;   /* shade is lit by the open sky above, which at dusk is the blue-violet part, not the peach band at the horizon */ float hm = max(hz2.r, max(hz2.g, hz2.b)); vec3 tint = hm > 1e-3 ? hz2/hm : vec3(1.);
+      vec3 gd = mix(vec3(1.), tint, 0.62 - 0.3*smoothstep(0.3, 0.8, lum)) * (0.6 + 0.4*smoothstep(0.08, 0.7, lum)); c *= mix(vec3(1.), gd, duskAir*(1. - 0.5*fogf)); }
     ink *= 1. + night*0.8;
     c = mix(c, graphite, clamp(ink*0.8 + edge*0.85, 0., 1.));
-    SKY_FLAT = 1.; vec3 fogT = mix(paper, skyColor(normalize(vec3(dir.x, max(dir.y,0.02), dir.z))), 0.55 + 0.45*night); SKY_FLAT = 0.;
+    SKY_FLAT = 1.; vec3 fogT = mix(paper, skyColor(normalize(vec3(dir.x, max(dir.y, 0.02 + 0.13*duskAir), dir.z))), 0.55 + 0.45*max(night, duskAir)); SKY_FLAT = 0.;
     c = mix(c, fogT, max(fogf*0.85, vf));
     { // the sea, seen from the edge: a moving surface of long swells and wind chop rolling in to the rock. It mirrors the sky at a glancing angle and shows its own deep color looking down, glitters under the sun or the moon, breaks into whitecaps on the crests, and fades into the air at the horizon
       vec3 Ps = vv.xyz * (d0 / max(-vv.z, 1e-3)); vec3 wps = (camWorld * vec4(Ps, 1.)).xyz;
@@ -6025,7 +6030,8 @@ function frame(){
     u.hazeCol.value.setRGB(0.78, 0.84, 0.92).lerp(new THREE.Color(0.042, 0.058, 0.1).multiplyScalar(0.7 + 0.5*mv), nk);
     u.hazeDen.value = 0.85*(0.012 + 0.042*nk + 0.16*WXS.fog + 0.035*WXS.rain + 0.05*WXS.snow + 0.006*WXS.cloud); u.hazeStart.value = (10 - 5.5*nk)*(1 - 0.8*Math.max(WXS.fog, 0.5*WXS.rain, 0.6*WXS.snow));
     u.hazeCol.value.lerp(new THREE.Color(0.7, 0.73, 0.76).multiplyScalar(0.12 + 0.88*dayAmt), Math.max(WXS.fog, 0.6*WXS.rain, 0.5*WXS.cloud)*0.8); u.hazeFloor.value = G(camera.position.x, camera.position.z); u.expo.value = 1.35 + 0.12*nk*(1 - 0.85*roomAmt); }   // night exteriors are exposed up for the film cameras: moonlit, not black
-  post.uniforms.dusk.value = 0;
+  { const y = SUNW.y, s1 = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a)/(b - a))); return t*t*(3 - 2*t); };   // dusk: the sun within a few degrees of the horizon, either side
+    const dA = s1(0.3, 0.06, y)*s1(-0.2, -0.05, y)*(1 - 0.5*WXS.fog); post.uniforms.duskAir.value = dA; post.uniforms.dusk.value = 0; }   // dusk light for every shot (the full sundown grade stays for the sunset shots below)
   if (DIR.on && DIR.shot && /^bed-/.test(DIR.shot.kind || '')) post.uniforms.expo.value *= 1 + 0.32*(1 - dayAmt);   // asleep outdoors at night there is no fire and no lamp: expose for the moonlit figure
   if (DIR.on && DIR.shot && /^sea-/.test(DIR.shot.kind || '')){ const u = post.uniforms; u.veil.value.x *= 0.22; u.hazeDen.value *= 0.3; u.expo.value *= 0.9; }   // looking out to sea by day: thin the haze so the water, the horizon and the sky read
   if (DIR.on && DIR.shot && /^sun-/.test(DIR.shot.kind || '')){ const u = post.uniforms; u.dusk.value = 1; u.veil.value.x *= 0.5; u.expo.value = /face|profile/.test(DIR.shot.kind) ? 1.14 : 1.02; u.hazeDen.value *= 0.22; u.hazeCol.value.setRGB(1.0, 0.6, 0.36).multiplyScalar(0.5); }   // sundown grade: exposed for the sky so he goes to silhouette, thin warm haze so the sea and horizon read
