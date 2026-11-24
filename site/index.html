@@ -212,7 +212,7 @@
   <div id="pane"></div>
 </div>
 
-<script src="world-loader.js?v=13"></script>
+<script src="world-loader.js?v=14"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -4532,11 +4532,16 @@ function makeTreasure(kind, color){
   return g;
 }
 let treasureKey = '';
+/* his art supplies go on his shelves once he has carried them home, whether or not the brain listed them as treasures: free low and middle shelf slots, in the order he took them */
+function artSupplies(){ const have = new Set(TREASURES.map(t => t.kind)), used = new Set(TREASURES.map(t => t.slot)), out = [];
+  for (const g of (GIFTS || []).slice().sort((a, b) => Date.parse(a.takenAt || 0) - Date.parse(b.takenAt || 0))) if (g && g.takenAt && g.to !== 'gage' && /^(paints|brushes|papers|canvases)$/.test(g.kind) && !have.has(g.kind)){
+    let sl = 1; while (used.has(sl) && sl <= 16) sl++; if (sl > 16) break; used.add(sl); have.add(g.kind); out.push({id:'shelf-' + g.id, kind:g.kind, slot:sl, name:g.what}); }
+  return out; }
 function rebuildTreasures(){
   if (!BURROW.ready) return;
-  const key = JSON.stringify(TREASURES) + (PROPS_READY ? '|p' : '') + (DESK.top != null ? '|d' : ''); if (key === treasureKey) return; treasureKey = key;
+  const ALLT = TREASURES.concat(artSupplies()), key = JSON.stringify(ALLT) + (PROPS_READY ? '|p' : '') + (DESK.top != null ? '|d' : ''); if (key === treasureKey) return; treasureKey = key;
   while (treasureGroup.children.length) treasureGroup.remove(treasureGroup.children[0]);
-  for (const t of TREASURES){ const sl = BURROW.slots[t.slot]; if (!sl) continue;
+  for (const t of ALLT){ const sl = BURROW.slots[t.slot]; if (!sl) continue;
     const m = makeTreasure(t.kind, t.color); m.scale.setScalar(1.7); m.position.copy(sl.p); m.rotation.y = sl.yaw + Math.PI/2 + (t.slot >= 17 ? 0 : 0.25);
     if (t.slot === 18){ const dx = TABLE.x - STOOL.x, dz = TABLE.z - STOOL.z, L = Math.hypot(dx, dz) || 1;   // the thing kept on the table stands at its far side, clear of where the open notebook lies when he writes
       m.position.set(TABLE.x + dx/L*0.17 + dz/L*0.11, sl.p.y, TABLE.z + dz/L*0.17 - dx/L*0.11);
@@ -5264,7 +5269,7 @@ function addExportBtn(){ const host = document.getElementById('btns'); if (!host
   const XD = {token:{}, gage:{}};   // older days fetched on demand (for the narrator's replays)
   window.__dayDoc = (id, day, cb) => { let un = null, got = false; try { un = db.doc((id === 'gage' ? 'gagediary/' : 'diary/') + day).onSnapshot(sn => { if (got) return; got = true; if (sn.exists){ XD[id][day] = sn.data(); setCh(id, {DIARY:{...XD[id], ...CH[id].DIARY}}); } try { un && un(); } catch (e) {} cb && cb(); }, () => {}); } catch (e) {} };
   db.doc('world/features').onSnapshot(s => { FEATURES = (s.exists ? s.data().items : null) || []; }, () => {});
-  db.doc('world/gifts').onSnapshot(s => { GIFTS = (s.exists ? s.data().items : null) || []; }, () => {});
+  db.doc('world/gifts').onSnapshot(s => { GIFTS = (s.exists ? s.data().items : null) || []; try { rebuildTreasures(); } catch (e) {} }, () => {});
   db.doc('world/narration').onSnapshot(s => { CH.token.NARR = (s.exists ? s.data().days : null) || {}; renderPane(); }, () => {});
   db.doc('gage/narration').onSnapshot(s => { CH.gage.NARR = (s.exists ? s.data().days : null) || {}; renderPane(); }, () => {});
   db.doc('world/photos').onSnapshot(s => { CH.token.PHOTOS = (s.exists ? s.data().items : null) || []; }, () => {});
