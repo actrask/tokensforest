@@ -212,7 +212,7 @@
   <div id="pane"></div>
 </div>
 
-<script src="world-loader.js?v=15"></script>
+<script src="world-loader.js?v=16"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -1941,7 +1941,34 @@ let tok = {x:PLACES.burrow.x, z:PLACES.burrow.z, yaw:0, pose:'stand', walking:fa
 /* ---- modeled props (props.glb): held props + storm lanterns ---- */
 const PROPS = {}; let PROPS_READY = false;
 const TABLE_GLASS = new THREE.MeshStandardMaterial({color:0x0d1613, roughness:0.2, metalness:0.15});   // the slate's screen when it is switched off
-const SCREEN_MAT = new THREE.MeshBasicMaterial({color:new THREE.Color(0.42, 1.0, 0.62)}), LANTERN_GLOW = new THREE.MeshBasicMaterial({color:0xffd9a0});
+/* THE SLATE (Token's and Gage's alike): a rough-cut square slab with chipped edges around a pristine, smooth screen that glows in slowly drifting iridescent color, like oil on water or a soap film.
+   The screen's color, the light it throws and its halo at night all come from one shifting color (IRID), so they always agree. */
+const IRID = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 256; const g = cv.getContext('2d');
+  const stops = ['#7ff0e6', '#8fb4ff', '#c79bff', '#ff9fd0', '#ffd79a', '#a6ffcf', '#7ff0e6'], P = stops.map(h => [1, 3, 5].map(k => parseInt(h.substr(k, 2), 16)));
+  const im = g.createImageData(256, 256), T = Math.PI*2;   // a film of color in soft swirls; every wave is whole across the tile, so it repeats with no seam
+  for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++){ const u = x/256, v = y/256;
+    let h = 0.5 + 0.3*Math.sin(T*(u + v)) + 0.09*Math.sin(T*(2*u - v) + 1.3) + 0.04*Math.sin(T*(v - u) + 2.1);   // broad, gentle bands, like a film of oil
+    h = ((h % 1) + 1) % 1*(P.length - 1); const i = Math.floor(h), f = h - i, A = P[i], B = P[i + 1], o = (y*256 + x)*4;
+    for (let c = 0; c < 3; c++) im.data[o + c] = (A[c] + (B[c] - A[c])*f)*0.82 + 255*0.18; im.data[o + 3] = 255; }
+  g.putImageData(im, 0, 0);
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1.35, 1.35);
+  const col = new THREE.Color(), hues = stops.slice(0, -1).map(h => new THREE.Color(h));
+  return { tex, col, hex:0x9fd8ff, tick(){ const t = performance.now()/1000; tex.offset.set((t*0.013) % 1, (t*0.007 + 0.25*Math.sin(t*0.11)) % 1);
+    const u = ((t*0.035) % 1 + 1) % 1*hues.length, i = Math.floor(u), f = u - i; col.copy(hues[i % hues.length]).lerp(hues[(i + 1) % hues.length], f); this.hex = col.getHex(); } }; })();
+const SCREEN_MAT = new THREE.MeshBasicMaterial({color:0xffffff, map:IRID.tex}), LANTERN_GLOW = new THREE.MeshBasicMaterial({color:0xffd9a0});
+function makeSlateModel(){ const G = new THREE.Group(); G.name = 'Slate'; let sd = 7; const R = () => (sd = (sd*16807) % 2147483647)/2147483647;
+  const S = 0.066, N = 48, sh = new THREE.Shape();   // the slab's outline: a square, chipped and uneven all the way round
+  for (let i = 0; i < N; i++){ const t = i/N*4, side = Math.floor(t), f = t - side, a = -S + 2*S*f;
+    let x = side === 0 ? a : side === 1 ? S : side === 2 ? -a : -S, z = side === 0 ? -S : side === 1 ? a : side === 2 ? S : -a;
+    const out = (R() - 0.5)*0.004 - (R() < 0.16 ? 0.004 + R()*0.004 : 0), nx = side === 1 ? 1 : side === 3 ? -1 : 0, nz = side === 2 ? 1 : side === 0 ? -1 : 0;
+    x += nx*out; z += nz*out; if (f < 0.04){ x *= 0.94; z *= 0.94; }   // knocked-off corners
+    i ? sh.lineTo(x, z) : sh.moveTo(x, z); }
+  sh.closePath(); const fg = new THREE.ExtrudeGeometry(sh, {depth:0.011, bevelEnabled:true, bevelThickness:0.0018, bevelSize:0.0016, bevelSegments:2, curveSegments:1});
+  fg.rotateX(Math.PI/2); fg.translate(0, 0.0055, 0); { const p = fg.attributes.position; for (let i = 0; i < p.count; i++){ const y = p.getY(i); if (Math.abs(y) < 0.0052) p.setY(i, y + (R() - 0.5)*0.0012); } } fg.computeVertexNormals();
+  const fm = new THREE.MeshLambertMaterial({color:0x7a7f87}); patchRim(fm, TOKEN_MUL); fm.userData.srcName = 'SlateFrame';
+  const fr = new THREE.Mesh(fg, fm); fr.castShadow = fr.receiveShadow = true; G.add(fr);
+  const sc = new THREE.Mesh(new THREE.BoxGeometry(0.098, 0.0014, 0.098), SCREEN_MAT); sc.position.y = 0.0078; G.add(sc);   // the glass: flat, smooth and seamless, set into the slab
+  return G; }
 (() => { const bin = Uint8Array.from(atob(PROPS_GLB), c => c.charCodeAt(0)).buffer;
   new GLTFLoader().parse(bin, '', g => {
     const cache = {};
@@ -1953,6 +1980,7 @@ const SCREEN_MAT = new THREE.MeshBasicMaterial({color:new THREE.Color(0.42, 1.0,
         if (r !== SCREEN_MAT && !/LanternGlow/.test(n)){ patchRim(r, TOKEN_MUL); r.userData.srcName = n; } return (cache[n] = r); });
       o.material = Array.isArray(o.material) ? conv : conv[0]; o.castShadow = !/Glow/.test(o.name); o.receiveShadow = true; });
     for (const c of [...g.scene.children]) PROPS[c.name] = c;
+    PROPS.Slate = makeSlateModel();   // one slate design for both of them (the file's old green one is not used)
     PROPS_READY = true; placeLanterns(); try { rebuildTreasures(); } catch (x) {} }, e => console.warn('props load failed', e)); })();
 function propInst(kind){ // one instance per character per kind, parked in the scene
   const c = CH[WHO]; c.props ||= {}; if (c.props[kind]) return c.props[kind];
@@ -1960,7 +1988,7 @@ function propInst(kind){ // one instance per character per kind, parked in the s
   if (kind === 'NotebookOpen' && WHO === 'token') nbSkin(o);   // his notebook shows his real pages
   if (kind === 'NotebookOpen' && WHO === 'gage') nbSkin(o, GNB.tex);   // and Gage's shows Gage's
   if (kind === 'Slate') o.traverse(x => { if (x.isMesh && x.material && /graphite/i.test(x.material.name || '')) x.visible = false; });   // no stick stuck to the slate's side
-  if (kind === 'Slate'){ const L = SLATE_GLOWS.pop() || new THREE.SpotLight(0x66ff99, 0, 1.6, 1.2, 1, 1.8); L.position.set(0, 0.05, 0); L.target.position.set(0, 1, 0); o.add(L); o.add(L.target); o.userData.glow = L; pinLight(L, o);   /* the glow leaves the glass only: a soft cone out of the front of the screen, nothing behind it */
+  if (kind === 'Slate'){ const L = SLATE_GLOWS.pop() || new THREE.SpotLight(0x9fd8ff, 0, 1.6, 1.2, 1, 1.8); L.position.set(0, 0.05, 0); L.target.position.set(0, 1, 0); o.add(L); o.add(L.target); o.userData.glow = L; pinLight(L, o);   /* the glow leaves the glass only: a soft cone out of the front of the screen, nothing behind it */
     try { // what is on the screen: a face laid over the glass that shows what he is really reading (see slateDraw)
       o.updateMatrixWorld(true); const inv = o.matrixWorld.clone().invert(), pts = [], all = []; let scrM = null;
       o.traverse(m => { if (!m.isMesh) return; const p = m.geometry.attributes.position, M = inv.clone().multiply(m.matrixWorld), tgt = m.material === SCREEN_MAT ? pts : all; if (m.material === SCREEN_MAT) scrM = m;
@@ -1971,7 +1999,7 @@ function propInst(kind){ // one instance per character per kind, parked in the s
         const right = new THREE.Vector3(1, 0, 0).addScaledVector(n, -n.x).normalize(), up = new THREE.Vector3().crossVectors(n, right).normalize(); let w = 0, h = 0;
         for (const v of pts){ const d = v.clone().sub(c); w = Math.max(w, Math.abs(d.dot(right))); h = Math.max(h, Math.abs(d.dot(up))); }
         const cv = document.createElement('canvas'); cv.width = 512; cv.height = Math.max(64, Math.round(512*h/Math.max(1e-4, w))); const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
-        const face = new THREE.Mesh(new THREE.PlaneGeometry(w*2*0.97, h*2*0.97), new THREE.MeshBasicMaterial({map:tex, toneMapped:false})); face.material.userData.keep = true;
+        const face = new THREE.Mesh(new THREE.PlaneGeometry(w*2*0.97, h*2*0.97), new THREE.MeshBasicMaterial({map:tex, toneMapped:false, transparent:true})); face.material.userData.keep = true;
         face.matrixAutoUpdate = false; face.matrix.makeBasis(right, up, n).setPosition(c.clone().addScaledVector(n, 0.0012)); o.add(face); face.visible = false;
         const scr = o.userData.scr = {c, n, up, right, w, h, cv, tex, face, key:'', signed:false}; scr.aim = () => { L.position.copy(c).addScaledVector(n, 0.012); L.target.position.copy(c).addScaledVector(n, 1); }; scr.aim();
         scr.sign = head => { if (scr.signed || !o.visible) return; scr.signed = true; o.updateMatrixWorld(true); const cw = o.localToWorld(c.clone()), nw = n.clone().applyQuaternion(o.getWorldQuaternion(new THREE.Quaternion()));   // the glass is the side that faces him: settle that the first time he holds it up
@@ -1993,7 +2021,7 @@ const KEY = new THREE.SpotLight(0xffb46a, 0, 9, 0.62, 0.85, 1.4); KEY.castShadow
 scene.add(KEY, KEY.target);
 const PINS = [];
 /* and the few lights that used to be made the first time they were needed are made once, up front, dark */
-const SLATE_GLOWS = [0, 1].map(() => { const L = new THREE.SpotLight(0x66ff99, 0, 1.6, 1.2, 1, 1.8); scene.add(L, L.target); return L; }), FAT_GLOWS = [0].map(() => { const L = new THREE.PointLight(0xffb060, 0, 1.6, 1.8); scene.add(L); return L; });
+const SLATE_GLOWS = [0, 1].map(() => { const L = new THREE.SpotLight(0x9fd8ff, 0, 1.6, 1.2, 1, 1.8); scene.add(L, L.target); return L; }), FAT_GLOWS = [0].map(() => { const L = new THREE.PointLight(0xffb060, 0, 1.6, 1.8); scene.add(L); return L; });
 /* a light that hangs from something that comes and goes (a slate in his hands, a lamp that exists only some days) lives in the scene itself and is carried to its host each frame; when the host is away it is simply dark */
 function pinLight(L, host){ const lp = L.position.clone(), tp = L.target ? L.target.position.clone() : null; scene.add(L); if (tp) scene.add(L.target); PINS.push({L, host, lp, tp}); }
 function pinStep(){ for (const p of PINS){ let on = true; for (let o = p.host; o; o = o.parent){ if (!o.visible){ on = false; break; } if (o === scene) break; if (!o.parent) on = false; }
@@ -2383,6 +2411,7 @@ function grainAxis(o){ const g = o.geometry; if (!g || g.userData.gv || o.isInst
 // practical lights that glow in the air (screen-space halation): filled every frame
 const HALO = {pos:Array.from({length:12}, () => new THREE.Vector4()), col:Array.from({length:12}, () => new THREE.Color())};
 function haloLights(nightK){
+  IRID.tick();   // the screens' color drifts every frame
   const list = [];
   for (const L of LANTERNS) list.push([L.x, L.y - 0.03, L.z, 0xffc070, (0.2 + 0.8*nightK)*(L.pl.intensity > 0.05 ? 1 : 0), 0.22]);
   list.push([CAMP_LIGHT.position.x, CAMP_LIGHT.position.y + 0.06, CAMP_LIGHT.position.z, 0xffc88a, (0.2 + 0.8*nightK)*Math.min(1, CAMP_LIGHT.intensity/2), 0.22]);
@@ -2394,7 +2423,7 @@ function haloLights(nightK){
   for (const q of (window.__elderL || [])) list.push([q[0], q[1], q[2], 0xffd27a, 0.25 + 0.75*nightK, 0.3]);
   for (const id in CH){ const sl = CH[id].props && CH[id].props.Slate; if (sl && sl.visible && sl.userData.glow && sl.userData.glow.intensity > 0.01){ const sc = sl.userData.scr, w = sc ? sl.localToWorld(sc.c.clone().addScaledVector(sc.n, 0.03)) : sl.getWorldPosition(new THREE.Vector3());
       let face = 1; if (sc){ const wn = sc.n.clone().transformDirection(sl.matrixWorld), toCam = camera.position.clone().sub(w).normalize(); face = Math.max(0, Math.min(1, (wn.dot(toCam) - 0.05)/0.4)); }   /* the screen's soft glow is only seen from the screen side: from behind the slate there is none, so nothing shines through its back */
-      if (face > 0.01) list.push([w.x, w.y, w.z, 0x66ff99, 0.275*nightK*face, 0.14]); } }
+      if (face > 0.01) list.push([w.x, w.y, w.z, IRID.hex, 0.275*nightK*face, 0.14]); } }
   const v = new THREE.Vector3(), vw = new THREE.Vector3(); let n = 0;
   for (const [x, y, z, c, k, R] of list){ if (n >= 12 || k <= 0.01) continue;
     vw.set(x, y, z).applyMatrix4(camera.matrixWorldInverse); if (vw.z > -0.3) continue;
@@ -2679,7 +2708,7 @@ function motionPose(dt, t){
       const desk = atDesk(ox, oz), tilt = desk ? (nb ? 0.12 : 0.35) : seated || ground ? 0.95 : 1.15, lower = !desk && mo.ev === 'lookup' ? sm01(Math.min(p*3, 1, (1 - p)*3)) : 0;
       const C = desk ? desk.clone().addScaledVector(U, nb ? 0 : 0.02) : (seated || ground ? hp(0, sh*0.36, 0.28*Hc) : hp(0, sh*0.62, 0.29*Hc)).addScaledVector(U, -0.08*Hc*lower);
       const Y = U.clone().multiplyScalar(Math.cos(tilt - lower*0.4)).addScaledVector(F, -Math.sin(tilt - lower*0.4)), Z = new THREE.Vector3().crossVectors(R, Y);
-      const hw = (nb ? 0.112 : 0.078)*ps;
+      const hw = (nb ? 0.112 : 0.068)*ps;
       const lap = !desk && (seated || ground); if (lap) C.y += mo.lapUp || 0;
       prop(nb ? 'NotebookOpen' : 'Slate', C, R, Y); if (lap) props[props.length - 1].lap = true;
       L = C.clone().addScaledVector(R, -hw).addScaledVector(Y, -0.004*ps); Rh = C.clone().addScaledVector(R, hw).addScaledVector(Y, -0.004*ps);
@@ -3201,7 +3230,7 @@ function motionPose(dt, t){
       else { const q = basisQ(ax, up); if (pr.spin) q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pr.spin)); o.quaternion.copy(q);
         o.position.copy(hw).addScaledVector(ax, -(pr.off || 0)*pr.s); if (pr.kind === 'CordCoil') o.position.addScaledVector(U, 0.01); } }
     else { o.position.copy(pr.pos); o.quaternion.copy(basisQ(pr.x, pr.y)); if (pr.lap) lapClear(o, pr, mo, P, Hc, dt); }
-    if (o.userData.glow) o.userData.glow.intensity = glow ? 0.03 + 0.5*(post.uniforms.night.value) : 0; }   // (the screen's green glow at half the strength it had)
+    if (o.userData.glow){ o.userData.glow.intensity = glow ? 0.03 + 0.5*(post.uniforms.night.value) : 0; o.userData.glow.color.copy(IRID.col); } }   // (the screen's green glow at half the strength it had)
   if (c.props) for (const k in c.props) if (!used.has(k)) c.props[k].visible = false;
   { const X = (c.xp ||= {}), on = new Set();
     for (const e of xps){ let o = X[e.key]; if (!o){ o = X[e.key] = e.mk(); scene.add(o); } on.add(e.key); o.visible = true;
@@ -4466,7 +4495,6 @@ function makeTreasure(kind, color){
     case 'shell': put(SphG(0.045,14,8,0,6.3,0,1.5), c ? 'main' : 0xf0e6dc, 0,0.0,0, 0,0,0, 1,0.5,0.8); break;
     case 'jar': put(CylG(0.032,0.032,0.08,14), 0xc9dde0, 0,0.04,0); put(CylG(0.026,0.026,0.05,12), c ? 'main' : 0x8a2f3a, 0,0.03,0); put(CylG(0.035,0.035,0.012,14), 0x6b5236, 0,0.085,0); break;
     case 'carving': put(SphG(0.03,10,8), c ? 'main' : 0xc79c6a, 0,0.03,0); put(SphG(0.04,10,8), c ? 'main' : 0xc79c6a, 0,0.085,0, 0,0,0, 1,1.1,1); break;
-    case 'slate': put(new THREE.BoxGeometry(0.15,0.105,0.012), c ? 'main' : 0x3b3f44, 0,0.06,0, -0.25,0,0); put(new THREE.BoxGeometry(0.04,0.03,0.04), 0x6b5236, 0,0.012,0.03); break;
     case 'note': put(new THREE.BoxGeometry(0.1,0.002,0.07), c ? 'main' : 0xf3eee2, -0.022,0.025,0, 0,0,0.9); put(new THREE.BoxGeometry(0.1,0.002,0.07), c ? 'main' : 0xece4d2, 0.022,0.025,0, 0,0,-0.9); break;
     case 'leaf': put(SphG(0.05,10,6), c ? 'main' : 0xc8662e, 0,0.005,0, 0,0.6,0, 1,0.06,0.55); break;
     case 'mushroom': put(CylG(0.01,0.014,0.06,8), 0xeee4cf, 0,0.03,0); put(SphG(0.035,12,6,0,6.3,0,1.6), c ? 'main' : 0xc0644a, 0,0.055,0, 0,0,0, 1,0.7,1); break;
@@ -4475,7 +4503,9 @@ function makeTreasure(kind, color){
     case 'map': put(CylG(0.02,0.02,0.15,10), c ? 'main' : 0xe3d4ac, 0,0.02,0, 0,0,Math.PI/2); put(TorG(0.021,0.003,4,12), 0x8a3a2a, 0,0.02,0, 0,Math.PI/2,0); break;
     case 'bottle': put(CylG(0.025,0.03,0.09,12), c ? 'main' : 0x5f8f7a, 0,0.045,0); put(CylG(0.01,0.012,0.04,8), c ? 'main' : 0x5f8f7a, 0,0.11,0); break;
     case 'berries': for (let k=0;k<7;k++) put(SphG(0.014,8,6), c ? 'main' : 0x7a2338, Math.cos(k*0.9)*0.022*(k%3?1:0.4), 0.015+(k%2)*0.012, Math.sin(k*0.9)*0.022*(k%3?1:0.4)); put(SphG(0.05,10,6), 0x5d7a3e, 0,0.004,0, 0,0,0, 1,0.06,0.7); break;
-    case 'tablet': put(new THREE.BoxGeometry(0.17,0.012,0.12), c ? 'main' : 0x2d3136, 0,0.006,0); put(new THREE.BoxGeometry(0.14,0.002,0.095), 0x5f7484, 0,0.013,0); break;   // (no stylus stuck on it)
+    case 'tablet': case 'slate': if (PROPS_READY && PROPS.Slate){ const sm = PROPS.Slate.clone(); sm.rotation.set(-1.25, 0, 0); sm.position.set(0, 0.066, 0.012); g.add(sm); break; }   // the same slab as the one they read from, stood up
+      if (kind === 'slate'){ put(new THREE.BoxGeometry(0.13,0.13,0.012), c ? 'main' : 0x3b3f44, 0,0.066,0, -0.25,0,0); break; }
+      put(new THREE.BoxGeometry(0.13,0.012,0.13), c ? 'main' : 0x3c4046, 0,0.006,0); put(new THREE.BoxGeometry(0.1,0.002,0.1), 0x9fd8ff, 0,0.013,0); break;
     case 'needle': put(new THREE.BoxGeometry(0.11,0.004,0.006), c ? 'main' : 0xb9c0c6, 0,0.003,0); break;
     case 'lid': put(CylG(0.05,0.052,0.012,20), c ? 'main' : 0x9aa0a4, 0,0.006,0); break;
     case 'oilcan': put(CylG(0.034,0.034,0.085,16), c ? 'main' : 0x8e3a2c, 0,0.0425,0); put(CylG(0.035,0.035,0.006,16), 0x6a6f74, 0,0.087,0); put(CylG(0.004,0.009,0.05,8), 0x6a6f74, 0.02,0.1,0, 0,0,-0.7); put(TorG(0.022,0.003,6,16,Math.PI), 0x6a6f74, -0.005,0.088,0, 0,Math.PI/2,0); put(new THREE.BoxGeometry(0.05,0.03,0.002), 0xe7d9a8, 0,0.045,0.0345); break;
@@ -4794,15 +4824,15 @@ readCard.onclick = e => { if (e.target === readCard) readCard.style.display = 'n
 function slateDraw(who, e){ // paint his real search onto the screen in his hands: what he typed in a search box, the page he opened, and what it told him
   const o = CH[who] && CH[who].props && CH[who].props.Slate, S = o && o.userData.scr; if (!S) return; const key = e ? e.at + '|' + (e.text || '').length : 'none'; if (S.key === key) return; S.key = key;
   try { const hd = CH[who].group.getObjectByName('Head'); if (hd && o.visible) S.sign(new THREE.Box3().setFromObject(hd).getCenter(new THREE.Vector3())); } catch (x) {}
-  const g = S.cv.getContext('2d'), W = S.cv.width, H = S.cv.height, pad = 26; g.fillStyle = '#c9f7d6'; g.fillRect(0, 0, W, H); S.face.visible = !!e; if (!e){ S.tex.needsUpdate = true; return; }
+  const g = S.cv.getContext('2d'), W = S.cv.width, H = S.cv.height, pad = 26; g.clearRect(0, 0, W, H); g.fillStyle = 'rgba(255,255,255,0.1)'; g.fillRect(0, 0, W, H); S.face.visible = !!e;   /* a pale veil over the moving color, so the words stay readable */ if (!e){ S.tex.needsUpdate = true; return; }
   const wrap = (txt, x, y, maxW, lh, maxLines) => { const words = String(txt).split(/\s+/); let line = '', n = 0; for (let i = 0; i < words.length; i++){ const t = line ? line + ' ' + words[i] : words[i];
       if (g.measureText(t).width > maxW && line){ n++; if (n >= maxLines){ g.fillText(line.replace(/.{0,3}$/, '') + '…', x, y); return y + lh; } g.fillText(line, x, y); y += lh; line = words[i]; } else line = t; }
     if (line){ g.fillText(line, x, y); y += lh; } return y; };
   g.textBaseline = 'top'; const q = qList(e)[qList(e).length - 1] || '';
-  g.fillStyle = '#f4fff7'; g.strokeStyle = '#2f6b47'; g.lineWidth = 3; const bh = 54; g.beginPath(); g.roundRect ? g.roundRect(pad, pad, W - pad*2, bh, 27) : g.rect(pad, pad, W - pad*2, bh); g.fill(); g.stroke();
-  g.fillStyle = '#17402a'; g.font = '600 24px Nunito, system-ui, sans-serif'; g.save(); g.beginPath(); g.rect(pad + 18, pad, W - pad*2 - 36, bh); g.clip(); g.fillText(q, pad + 20, pad + 15); g.restore();
-  let y = pad + bh + 20; if (e.source){ g.fillStyle = '#0f5a3a'; g.font = '800 25px Nunito, system-ui, sans-serif'; y = wrap(e.source, pad, y, W - pad*2, 30, 2) + 8; g.fillStyle = '#2f6b47'; g.fillRect(pad, y, W - pad*2, 2); y += 14; }
-  g.fillStyle = '#1c3527'; g.font = '500 23px Nunito, system-ui, sans-serif'; wrap(e.text || '', pad, y, W - pad*2, 29, Math.max(2, Math.floor((H - y - pad)/29)));
+  g.fillStyle = 'rgba(255,255,255,0.5)'; g.strokeStyle = '#3a3550'; g.lineWidth = 3; const bh = 54; g.beginPath(); g.roundRect ? g.roundRect(pad, pad, W - pad*2, bh, 27) : g.rect(pad, pad, W - pad*2, bh); g.fill(); g.stroke();
+  g.fillStyle = '#231f33'; g.font = '600 24px Nunito, system-ui, sans-serif'; g.save(); g.beginPath(); g.rect(pad + 18, pad, W - pad*2 - 36, bh); g.clip(); g.fillText(q, pad + 20, pad + 15); g.restore();
+  let y = pad + bh + 20; if (e.source){ g.fillStyle = '#2a2440'; g.font = '800 25px Nunito, system-ui, sans-serif'; y = wrap(e.source, pad, y, W - pad*2, 30, 2) + 8; g.fillStyle = '#3a3550'; g.fillRect(pad, y, W - pad*2, 2); y += 14; }
+  g.fillStyle = '#1d1a2a'; g.font = '500 23px Nunito, system-ui, sans-serif'; wrap(e.text || '', pad, y, W - pad*2, 29, Math.max(2, Math.floor((H - y - pad)/29)));
   S.tex.needsUpdate = true; }
 // "Why?": the reason behind what he is doing right now, in his own words where he wrote any: the aim of this step of his plan, what he wrote or thought while at it, and what is on his mind
 document.getElementById('whyBtn').onclick = () => { const tk = CH[ACTIVE].tok, NMc = CH[ACTIVE].name, lab = t => `<span style="opacity:.65;font-size:17px">${t}</span><br>`; let es = [];
