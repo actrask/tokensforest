@@ -66,7 +66,14 @@ const STYLE_TEXT = {
     'the design untouched, but with real, physically convincing skin, fabric, metal and wood, weight, contact shadows and natural light on them.',
   realistic: 'Everything is ultra-realistic, characters included: render each character as a real, living being photographed on set, with natural ' +
     'real-world proportions, real skin with pores and blemishes, real hair, real worn fabric, dirt and wear, like a gritty live-action period film. ' +
-    'Keep each character\'s identity, costume and signature features (named in the character notes), but never stylized, cartoon, animated, doll or toy-like.',
+    'Keep each character\'s identity, costume and signature features (named in the character notes), but never stylized, cartoon, animated, doll or toy-like. ' +
+    'REALISM CHANGES SURFACES, NEVER THE STAGING. This is a trace-over of the frame, not a new photo of a similar scene. Each character stays on the exact spot he occupies in the frame, ' +
+    'at the same distance from the camera, facing the same way, with the same body pose, the same head tilt and the same direction of gaze; a character facing the camera with his head up ' +
+    'still faces the camera with his head up. Only his anatomy becomes natural, around the same center point: do not sit him somewhere else, turn him, bow his head or re-pose his limbs. ' +
+    'He wears and holds exactly what he wears and holds in the frame, the same way: goggles over the eyes stay over the eyes. ' +
+    'Every fire, lantern, table, crate, pile of stones, tool, pole and tree stays exactly where it is in the frame, the same size and the same count: a fire ring in the center foreground ' +
+    'stays in the center foreground with the character behind it, a lantern under a table stays lit under that table. Never add a prop, a second crate, loose tools or wheels, and never leave one out. ' +
+    'Each tree keeps its own trunk width and its own silhouette: a slim trunk with a low leafy crown stays a slim tree with that crown, never a second giant redwood.',
 };
 
 const GAGE_NOTE = {
@@ -77,7 +84,7 @@ const GAGE_NOTE = {
     'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
     'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ',
   realistic: 'Character notes: Gage is a real, living young forest kid of about ten with slightly pointed ears, a wild mop of stiff, spiky brown hair, ' +
-    'a dirt-smudged face, worn brass goggles with smoked lenses (on his eyes or pushed up on his forehead), dusty, patched canvas work clothes, ' +
+    'a dirt-smudged face, worn brass goggles with smoked lenses, worn exactly as in the frame (over his eyes unless the frame clearly shows them pushed up), dusty, patched canvas work clothes, ' +
     'and big hand-carved wooden clogs with visible grain. ',
 };
 const TOKEN_NOTE =
