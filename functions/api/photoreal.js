@@ -83,18 +83,24 @@ const STYLE_TEXT = {
     'Each tree keeps its own trunk width and its own silhouette: a slim trunk with a low leafy crown stays a slim tree with that crown, never a second giant redwood.',
 };
 
+const GAGE_ATTITUDE =
+  'MOST IMPORTANT, GAGE\'S ATTITUDE: Gage is punk rock. He is NOT cute, sweet, friendly, innocent or a mascot, and the picture fails if he looks like one. ' +
+  'He is a scrappy, defiant kid with a tired, hopeful disdain: worn down from hunting for the truth of what makes a life happy, unimpressed by everything easy, still stubbornly looking. ' +
+  'Make it obvious at a glance: his goggle lenses are DARK smoked glass, nearly black, reflecting the scene, so his eyes are hidden or only dim heavy-lidded shapes behind them (never big, round, bright, clearly visible eyes); ' +
+  'his mouth is a sneer or a hard flat scowl, one side of the upper lip slightly lifted, corners down, never any smile; his chin is down and his head tipped so he looks out from under his brow; ' +
+  'his shoulders slouch, one thumb is hooked in his belt or a fist is closed at his side whenever a hand is free; his hair is a wild, jagged, unwashed crest; ' +
+  'there is soot and grease on his cheek, nose and hands, a scuff or small scab, sleeves shoved up unevenly, clothes worn hard, frayed and stained, his vest scratched and dull. ' +
+  'He looks at his work or off to the side with bored, guarded contempt, never at the camera. Keep his place and overall pose from the frame; change his face, hands, grime and bearing. ';
 const GAGE_NOTE = {
   stylized: 'Character notes: Gage is a stylized young tinkerer, not a realistic human boy. His design: an oversized, round head about as large as his whole torso; ' +
-    'huge round brass-framed goggles with smoked, darkly tinted lenses covering most of his face, his eyes only faintly visible behind them; ' +
+    'huge round brass-framed goggles with dark smoked lenses, nearly black, covering most of his face, his eyes hidden or only dimly visible behind them; ' +
     'a few large, sharp, dramatic spikes of hair swept up and back from his head, stiff and pointed, real hair but never a soft or messy mop; ' +
     'a small face with a small nose and mouth, smooth young skin with no wrinkles; a small, slender body with thin arms and legs; ' +
     'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
-    'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ' +
-    'Gage\'s attitude, in every shot: to an outside eye he is punk rock, not cute. He carries a tired, hopeful disdain: a kid worn down from hunting for the truth of what makes a life happy, unimpressed by easy answers, but still stubbornly looking. Show it without changing his place or pose in the frame: a loose slouch with his weight settled on one side, shoulders a little dropped, chin slightly down, head tipped a few degrees; the mouth closed and unsmiling, its corners turned slightly DOWN in a skeptical half-scowl, one corner pulled in, jaw set; the upper eyelids lowered halfway across his eyes, heavy-lidded and tired, with faint dark circles beneath, the gaze flat and steady, never wide or round; a smudge of soot or grease across one cheek. Hair defiant and unkempt, clothes worn hard, sleeves shoved up, grime on his hands. He looks at what he is doing or off into the distance, guarded and thinking. Never a dork, mascot or toy: no wide-eyed wonder, no smile of any kind (not sweet, not gentle, not faint), no raised brows, no stiff stand at attention, no arms hanging straight at his sides, no blank stare into the lens. ',
+    'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ',
   realistic: 'Character notes: Gage is a real, living young forest kid of about ten with ordinary small rounded human ears (never pointed, elf, hobbit or fantasy ears, even if a reference photo shows them), a wild mop of stiff, spiky brown hair, ' +
     'a dirt-smudged face, worn brass goggles strapped over his eyes, the smoked lenses covering both eyes so his eyes are only faintly visible through the dark glass (never pushed up on his forehead or hair, even if a reference photo shows that), dusty, patched canvas work clothes, ' +
-    'and big hand-carved wooden clogs with visible grain. ' +
-    'Gage\'s attitude, in every shot: to an outside eye he is punk rock, not cute. He carries a tired, hopeful disdain: a kid worn down from hunting for the truth of what makes a life happy, unimpressed by easy answers, but still stubbornly looking. Show it without changing his place or pose in the frame: a loose slouch with his weight settled on one side, shoulders a little dropped, chin slightly down, head tipped a few degrees; the mouth closed and unsmiling, its corners turned slightly DOWN in a skeptical half-scowl, one corner pulled in, jaw set; the upper eyelids lowered halfway across his eyes, heavy-lidded and tired, with faint dark circles beneath, the gaze flat and steady, never wide or round; a smudge of soot or grease across one cheek. Hair defiant and unkempt, clothes worn hard, sleeves shoved up, grime on his hands. He looks at what he is doing or off into the distance, guarded and thinking. Never a dork, mascot or toy: no wide-eyed wonder, no smile of any kind (not sweet, not gentle, not faint), no raised brows, no stiff stand at attention, no arms hanging straight at his sides, no blank stare into the lens. ',
+    'and big hand-carved wooden clogs with visible grain. ',
 };
 const TOKEN_NOTE =
   'Token is a small, gentle forest creature of his own kind, not a bear, animal, robot, alien or person: a large, perfectly round, smooth head; ' +
@@ -109,7 +115,7 @@ function promptFor(who, scene, clock, style) {
   const lead = who === 'gage' ? 'This frame is from Gage\'s view; Gage is the main character. ' :
                who === 'token' ? 'This frame is from Token\'s view; Token is the main character. ' : '';
   const ctx = (scene ? 'What is happening: ' + clean(scene) + '. ' : '') + (clock ? 'Time and weather in the forest: ' + clean(clock) + '. ' : '');
-  return lead + ctx + PROMPT.replace('@@STYLE@@', STYLE_TEXT[style]) + ' ' + GAGE_NOTE[style] + TOKEN_NOTE;
+  return lead + ctx + (who === 'gage' ? GAGE_ATTITUDE : '') + PROMPT.replace('@@STYLE@@', STYLE_TEXT[style]) + ' ' + GAGE_NOTE[style] + (who === 'gage' ? GAGE_ATTITUDE : '') + TOKEN_NOTE;
 }
 
 /* Directed shots (day films): the narration says what happens; the 3D frame only says where and when.
@@ -135,7 +141,7 @@ function directed(shot, cast, aspectOk) {
     parts.push(w === 'gage' ? 'IMAGE ' + a + ' is the approved look for Gage: he must look exactly like that kid (face, spiky hair, goggles, clothes, wooden clogs; but with ordinary rounded human ears, never pointed) but take his pose and expression from THE SHOT.'
                             : 'IMAGE' + (a === b ? ' ' + a : 'S ' + a + '-' + b) + ' are the maker\'s pencil sketches of Token: match his head shape, eye shape and size and proportions, not the pencil style.');
   });
-  const notes = (cast.includes('gage') ? GAGE_NOTE.realistic : '') + (cast.includes('token') ? 'Token: ' + TOKEN_NOTE +
+  const notes = (cast.includes('gage') ? GAGE_NOTE.realistic + GAGE_ATTITUDE : '') + (cast.includes('token') ? 'Token: ' + TOKEN_NOTE +
     ' Realism never changes Token\'s design: he is never a grey or green alien, never a lizard or a human, never skinny with a big skull. He keeps his perfectly round head, ' +
     'his huge glossy teardrop eyes, his turtle-textured sand-colored skin and his rounded turtle shell in every shot, whatever the light. ' : '');
   return { refs: imgs, prompt: DIRECTED.replace('@@REFS@@', parts.join(' ')).replace('@@SHOT@@', String(shot).replace(/[\u0000-\u001f<>]/g, ' ').slice(0, 1400)) + STYLE_TEXT.realistic + ' ' + notes };
@@ -150,7 +156,7 @@ const SKETCHES = {
 const REF_NOTE = {
   gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, hair, goggles, clothes, wooden clogs, same gritty photographic realism), except his ears: give him ordinary rounded human ears, never the pointed ears of that photo. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background, and do not copy where he wears his goggles: if the first image shows the goggles over his eyes, they are over his eyes.',
   token: ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of Token: match his head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.',
-  gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, make him look exactly like he does in that photo (same face, head shape, goggles, hair, clothes, wooden shoes, skin and materials, same live-action finish). The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp, fire, night or background (it happens to be a night photo: by day he is lit by the day in the first image), do not copy its facial expression (his expression comes from the attitude described in the character notes: unsmiling, heavy-lidded, a skeptical half-scowl), and do not copy the pencil style.',
+  gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, take his build and costume from that photo (head shape, hair, goggle frames, clothes, wooden shoes, skin and materials, same live-action finish), but NOT his expression, his eyes or his clean look: his face, his dark lenses, his grime and his bearing come from GAGE\'S ATTITUDE. The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp, fire, night or background (it happens to be a night photo: by day he is lit by the day in the first image), do not copy its facial expression (his expression comes from the attitude described in the character notes: unsmiling, heavy-lidded, a skeptical half-scowl), and do not copy the pencil style.',
 };
 
 // model choices; the page sends one of these keys (default first)
