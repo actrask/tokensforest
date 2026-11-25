@@ -42,15 +42,21 @@ const PROMPT =
   'Same sun direction and height, same overall brightness and exposure, same amount of open sky between the trees, same haze or fog density, ' +
   'every light shaft, glare, backlight, rim light, reflection on water or wet ground and bright or dark area exactly where it is in the frame. ' +
   'If the frame is bright, hazy and backlit, the photo is bright, hazy and backlit, with the same glowing atmosphere and volumetric beams; ' +
-  'if it is dark, it stays dark. Never darken it, never close the canopy over open sky, never trade its light for a generic moody forest look. ' +
+  'if it is dark, it stays dark. By day, never darken it, never close the canopy over open sky, never trade its light for a generic moody forest look. ' +
   'At night or indoors, the light comes only from the lanterns, candles and fires in the frame. ' +
+  'NIGHT IS DARK, AND THE MOON IS ONLY A RIM. The game draws night brighter and flatter than a real night so the player can see; do not copy that overall brightness. ' +
+  'At night moonlight never fills anything: it shows only as a thin, cool, silver-blue edge along one side of each tree trunk, along the top edges of canvas, poles and rocks, ' +
+  'and as a fine rim on a character. The faces of the trunks, the ground between them and everything beyond the reach of the fire or lantern fall away to near black, ' +
+  'with no ambient or sky fill, no glowing mist and no evenly lit background forest; distant trees are read only by their rim and by darker shapes against a slightly less dark sky. ' +
+  'Firelight and lantern light fall off quickly with distance, a warm pool around the flame and then darkness. The picture is high contrast and dramatic, lit like a night exterior in a feature film: ' +
+  'deep true blacks, a warm key from the fire, a cool rim from the moon, and nothing in between. ' +
   'THE HERO IS LIT LIKE A HERO: the main character is the star of this shot and is lit the way a film crew lights its lead, with the scene\'s sun as the key. ' +
   'When the sun is behind or beside him, give him a hot, bright, golden edge light: a crisp glowing rim that clearly outlines his whole silhouette, ' +
   'the hair blazing with light, a bright line along his ears, cheek, neck, shoulders, back, arms, hands and shoes, light catching the goggle rims, ' +
   'strong enough to be the brightest edge in the frame and to pop him off the background. Fill his face and front with warm bounce light from the sunlit ground ' +
   'so his expression and clothes read clearly. Never dark, murky, flat or filled in, never a silhouette; he is the most clearly lit, most readable thing in the shot. Being the star changes only his light, never his size, position or distance: he stays exactly as big and exactly where he is in the frame. ' +
-  'Warmth: the whole image feels warm, the golden, honey-colored warmth of sunlight in a forest: warm highlights, warm haze, warm skin, golden light on wood and water, ' +
-  'with only gentle cool tones in the deepest shadows. Never cold, gray, blue or desaturated. ' +
+  'Warmth (by day): the whole image feels warm, the golden, honey-colored warmth of sunlight in a forest: warm highlights, warm haze, warm skin, golden light on wood and water, ' +
+  'with only gentle cool tones in the deepest shadows. Never cold, gray, blue or desaturated. At night the warmth lives only in the fire and lantern light; the rest is dark with a cool moon rim. ' +
   'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with needles and debris. ' +
   'Blankets and bedding are dense, thick wool. ' +
   'Color: the frame\'s own palette pushed warm, as real film color, true exposure, fine film grain. Never oversaturated, glossy, HDR, cute or storybook. ' +
