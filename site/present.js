@@ -10,7 +10,7 @@
   if (/(^|[#&])dev\b/.test(location.hash)) mode = 'dev'; if (/(^|[#&])present\b/.test(location.hash)) mode = 'present';
 
   var css = document.createElement('style'); css.textContent = [
-    'body.present>*:not(#gl):not(#prShade):not(#cutHold):not(#cutBlack):not(.bars):not(#pres):not(#presKB):not(#presCap):not(#presTog):not(#presStop):not(script):not(style){visibility:hidden!important}',
+    'body.present>*:not(#gl):not(#prShade):not(#cutHold):not(#cutBlack):not(.bars):not(#pres):not(#presKB):not(#presCap):not(#presTog):not(#presStop):not(#presCam):not(#camOvC):not(script):not(style){visibility:hidden!important}',
     '#pres{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(10,12,10,.35),rgba(6,8,6,.86));color:#f4ead2;font-family:Georgia,"Iowan Old Style",serif;opacity:0;transition:opacity 1.2s}',
     'body.present #pres.show{display:flex} #pres.vis{opacity:1}',
     '#pres .in{max-width:640px;padding:28px 26px;text-align:center}',
@@ -88,7 +88,7 @@
     [[1.14, -3.5, -.5], [1.14, 3.5, 0]]];   // pan right to left
   function tf(f){ return 'translate(' + f[1] + '%,' + f[2] + '%) scale(' + f[0] + ')'; }
   function play(who, day){ var f = F(), r = (READY[who] || []).filter(function(x){ return x.day === day; })[0]; if (!f || !r) return;
-    stop(true); hideCard(); document.body.classList.add('playing'); document.body.classList.toggle('nocam', !window.__forestCamera);
+    stop(true); hideCard(); document.body.classList.add('playing'); document.body.classList.toggle('nocam', !window.__forestCamera && !document.getElementById('camBtnC'));
     P = {who:who, day:day, t:r.m.t, cur:-1, shots:{}, imgs:{}, k:0, shown:null};
     /* pre-made stills are off: the viewer takes the photos with the camera button */
     if (window.__presentFilm) fetch('film/' + who + '-' + day + '.json', {cache:'no-store'}).then(function(x){ return x.ok ? x.json() : null; }).then(function(j){
@@ -118,7 +118,8 @@
     document.body.classList.remove('playing'); kb.classList.remove('on'); setTimeout(function(){ if (!kb.classList.contains('on')) kb.innerHTML = ''; }, 1500); cap.textContent = ''; }
   stopB.onclick = function(){ stop(); title(); showCard(); };
   /* the camera: the telling pauses while the photo develops, and picks up again when the photo is closed (or a few seconds after it appears) */
-  camB.onclick = function(){ var f = F(), C = window.__forestCamera; if (!P || !f || !C || C.busy() || P.holding) return;
+  camB.onclick = function(){ var f = F(), C = window.__forestCamera; if (!C){ var cc = document.getElementById('camBtnC'); if (cc) cc.click(); return; }   // the Claude version's own camera (it develops on tokensforest.com) pauses the telling itself
+    if (!P || !f || !C || C.busy() || P.holding) return;
     var A = f.audio; P.holding = true; try { A.pause(); } catch (e) {} document.body.classList.add('paused'); camB.classList.add('wait');
     var resumed = false, timer = null, here = P;
     function resume(){ if (resumed) return; resumed = true; clearTimeout(timer); camB.classList.remove('wait'); document.body.classList.remove('paused');

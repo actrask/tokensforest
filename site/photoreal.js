@@ -17,7 +17,7 @@
     '#prBar .btn{min-width:90px}' + '#prStyle{display:flex;gap:0;margin-right:10px} #prStyle .btn{min-width:84px;border-radius:0} #prStyle .btn:first-child{border-radius:999px 0 0 999px} #prStyle .btn:last-child{border-radius:0 999px 999px 0} #prStyle .btn.on{background:#f4ead8;color:#2a2420}' + '#prFrame img{cursor:pointer}' + '#prCount{color:#cbbfa8;font:13px system-ui,sans-serif;text-align:center;min-height:16px}' + '#prFrame .nav{position:absolute;top:50%;transform:translateY(-50%);color:#fff;font:600 30px system-ui;opacity:.55;pointer-events:none;text-shadow:0 1px 6px #000;padding:0 10px}' + '#prFrame .nav.l{left:0} #prFrame .nav.r{right:0}' +
     '#photoBtn{position:fixed;right:132px;bottom:16px;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:opacity .6s}' +
     '#photoBtn svg{width:21px;height:21px;display:block}' +
-    'body.cine #photoBtn{opacity:0;pointer-events:none}' +
+    'body.cine #photoBtn{opacity:1;pointer-events:auto;z-index:31}' +   /* the camera stays up while a day is being watched: that is the best time to take a picture */
     '@media (max-width:640px){#photoBtn{right:120px;bottom:104px}}' +
     '#galleryBtn{position:fixed;z-index:6;width:42px;height:42px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:opacity .6s}' +
     '#galleryBtn svg{width:20px;height:20px;display:block}' +
@@ -162,7 +162,10 @@
     document.body.appendChild(shade); bar.insertBefore(sw, bar.firstChild); paintStyle();
     var b = el('button', {'class':'btn', id:'photoBtn', title:'Photoreal photo of this view', 'aria-label':'Take a photoreal photo of this view'},
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>');
-    b.addEventListener('click', function(e){ e.stopPropagation(); shoot(); });
+    b.addEventListener('click', function(e){ e.stopPropagation();   // during a telling, the narrator waits while the photo develops: he goes on when the photo is closed, or a few seconds after it appears
+      var F = window.__forest, A = F && F.on && F.on() && F.audio && !F.audio.paused ? F.audio : null; if (!A) return shoot();
+      A.pause(); var resumed = false, t = null; function go(){ if (resumed) return; resumed = true; clearTimeout(t); try { var pr = A.play(); if (pr && pr.catch) pr.catch(function(){}); } catch (x) {} }
+      if (!window.__forestCamera.shoot(function(ok){ t = setTimeout(function(){ if (!resumed){ try { window.__forestCamera.close(); } catch (x) {} go(); } }, ok ? 6000 : 3000); }, go)) go(); });
     document.body.appendChild(b);
     document.body.appendChild(gal);
     galBtn = el('button', {'class':'btn', id:'galleryBtn', title:'Your photos', 'aria-label':'See your previous photos'},
