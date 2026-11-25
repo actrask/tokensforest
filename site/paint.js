@@ -85,11 +85,22 @@
       card.innerHTML = '<div style="font:700 35px Gaegu;margin:0 0 10px">Token’s paintings</div>' +
         (L.length ? '<div style="margin:6px 0 14px;opacity:.8;font-size:17px">Painted with the box of colors his maker left at the stump. Each one is drawn here from what he wrote about it, bare paper and all.</div>' +
           L.map(function(p, i){ return '<figure style="margin:0 0 24px"><canvas class="pntC" data-i="' + i + '" width="600" height="' + (p.canvas ? 520 : 420) + '" style="width:100%;height:auto;display:block;background:#f4eedf;border-radius:2px;box-shadow:0 6px 18px rgba(0,0,0,.4)"></canvas>' +
+            '<button class="btn pntD" data-i="' + i + '" style="margin-top:8px;font-size:15px;padding:6px 14px">Download full size</button>' +
             '<figcaption style="margin-top:8px"><b>' + esc(p.title) + '</b><br><span style="opacity:.65;font-size:16px">' + esc(fmt(p.at)) + '</span><br><span style="font-size:17px">' + esc(p.words.join(' ')) + '</span></figcaption></figure>'; }).join('')
           : '<div style="margin:6px 0">Token has his paints, but he hasn’t painted anything yet.</div>') +
         '<button class="btn" style="margin-top:14px;width:100%">Close</button>';
       card.querySelectorAll('canvas.pntC').forEach(function(c){ try { draw(c, L[+c.dataset.i]); } catch (e) {} });
-      card.querySelector('button').onclick = function(){ rc.style.display = 'none'; }; }); }
+      card.querySelectorAll('button.pntD').forEach(function(bt){ bt.onclick = function(){ save(L[+bt.dataset.i], bt); }; });
+      var cl = card.querySelectorAll('button'); cl[cl.length - 1].onclick = function(){ rc.style.display = 'none'; }; }); }
+  /* the same painting, drawn again six times larger (3600 pixels wide) and handed over as a PNG: the phone's share sheet where there is one (Save Image), a plain download elsewhere */
+  function save(p, bt){ var K = 6, w = 600, h = p.canvas ? 520 : 420, cv = document.createElement('canvas'); cv.width = w*K; cv.height = h*K; var g = cv.getContext('2d'); g.scale(K, K);
+    var old = bt.textContent; bt.textContent = 'Painting it full size…'; bt.disabled = true; var done = function(msg){ bt.textContent = msg || old; bt.disabled = false; if (msg) setTimeout(function(){ bt.textContent = old; }, 4000); };
+    setTimeout(function(){ try { draw({width:w, height:h, getContext:function(){ return g; }}, p); } catch (e) { return done('Could not draw it'); }
+      var name = 'token-painting-' + String(p.title || 'painting').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '-' + String(p.at || '').slice(0, 10) + '.png';
+      cv.toBlob(function(bl){ if (!bl) return done('Could not save it');
+        var plain = function(){ var u = URL.createObjectURL(bl), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 30000); done('Saved'); };
+        try { var f = new File([bl], name, {type:'image/png'}); if (matchMedia('(pointer:coarse)').matches && navigator.canShare && navigator.canShare({files:[f]})){ navigator.share({files:[f], title:p.title || 'Token’s painting'}).then(function(){ done(); }, function(e){ if (e && e.name === 'AbortError') done(); else plain(); }); return; } } catch (e) {}
+        plain(); }, 'image/png'); }, 30); }
   function addBtn(){ var bs = document.getElementById('btns'); if (!bs || document.getElementById('pntBtn')) return !!bs;
     var b = document.createElement('button'); b.className = 'btn light'; b.id = 'pntBtn'; b.textContent = 'His paintings';
     var after = document.getElementById('phoBtn'); bs.insertBefore(b, after ? after.nextSibling : null); b.onclick = open; return true; }

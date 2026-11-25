@@ -45,7 +45,7 @@
   var st = document.createElement('style'); st.textContent = '#openNote,#exportBtn{display:none!important} #welcome .hero{display:block;margin:0 auto 10px;max-height:34vh;max-width:100%;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.25)}'; document.head.appendChild(st);
   var nt = document.createElement('script'); nt.src = 'notes.js?v=1'; nt.defer = true; document.head.appendChild(nt);   // Cam's notes (owner devices only)
   var lt = document.createElement('script'); lt.src = 'letters.js?v=1'; lt.defer = true; document.head.appendChild(lt);   // notes from visitors: read by anyone, written after a Google sign-in, approved by the keeper
-  var pn = document.createElement('script'); pn.src = 'paint.js?v=2'; pn.defer = true; document.head.appendChild(pn);   // "His paintings"
+  var pn = document.createElement('script'); pn.src = 'paint.js?v=3'; pn.defer = true; document.head.appendChild(pn);   // "His paintings"
   var ps = document.createElement('script'); ps.src = 'present.js?v=4'; ps.defer = true; document.head.appendChild(ps);   // presentation mode (the default view)
   var pr = document.createElement('script'); pr.src = 'photoreal.js?v=10'; pr.defer = true; document.head.appendChild(pr);   // the camera button (public site only)
   document.addEventListener('DOMContentLoaded', function(){ var c = document.querySelector('#welcome .card'); if (!c || c.querySelector('.hero')) return; var im = new Image(); im.className = 'hero'; im.alt = "Pencil drawing of Token walking through the forest with his staff and bundle"; im.src = 'hero.jpg'; c.insertBefore(im, c.firstChild); });

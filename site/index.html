@@ -212,7 +212,7 @@
   <div id="pane"></div>
 </div>
 
-<script src="world-loader.js?v=17"></script>
+<script src="world-loader.js?v=18"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -2656,7 +2656,7 @@ function lapClear(o, pr, mo, P, Hc, dt){
       for (let i = 0; i < at.count; i += st){ v.fromBufferAttribute(at, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv); if (v.x < B.min.x - mg || v.x > B.max.x + mg || v.z < B.min.z - mg || v.z > B.max.z + mg || v.y > slab) continue; if (v.y > top) top = v.y; } }); }
     const ex = top > -1e8 ? ((top - B.min.y)*s + 0.006)/ny : -1; if (ex <= 0.0005 || up >= cap) break; const d = Math.min(ex, cap - up); up += d; o.position.y += d; }
   const cur = mo.lapUp || 0, slack = top > -1e8 ? Math.max(0, -((top - B.min.y)*s + 0.006)/ny) : cur;   // how far it could come down again and still clear
-  mo.lapUp = up > 0 ? Math.min(cap, cur + up) : Math.max(0, cur - Math.min(slack, dt*0.1)); }
+  mo.lapUp = up > 0 ? Math.min(cap, cur + up) : cur; }   /* once lifted clear it stays there for this sitting: letting it settle back made it sink onto his toes and jump up again, over and over (the book is tilted, so lifting it slides it off the very thing it was lifted over) */
 function motionPose(dt, t){
   const ik = ikRig(); if (!ik) return false;
   const P = parts, S = stand, c = CH[WHO];
@@ -5826,7 +5826,7 @@ function scrOff(){ if (SCR.hh){ SCR.hh.visible = true; SCR.hh = null; } SCR.page
 window.__SCR = SCR;
 function slateCamera(){ // the screen camera: it sits just above the glass, square to it and the right way up, and follows the slate as his hands move
   const c = CH[ACTIVE], tk = c.tok, V = THREE.Vector3, sl = c.props && c.props.Slate, S = sl && sl.userData.scr, nbk = c.props && c.props.NotebookOpen;
-  let cw, n, up, hw, hh, marg = 1.25;
+  let cw, n, up, hw, hh, marg = 1.38;
   if (S && sl.visible && tk.motion === 'read' && !tk.walking){ if (SCR.page) scrOff(); sl.updateMatrixWorld(true); cw = sl.localToWorld(S.c.clone()); const q = sl.getWorldQuaternion(new THREE.Quaternion()); n = S.n.clone().applyQuaternion(q); up = S.up.clone().applyQuaternion(q); hw = S.w*sl.scale.x; hh = S.h*sl.scale.x; }
   else if (nbk && nbk.visible && (tk.motion === 'write' || tk.motion === 'read') && !tk.walking){ // the page camera: over the open notebook, square to the spread, the top of the page away from him, so what he writes can be read as he writes it
     nbk.updateMatrixWorld(true); if (!nbk.userData.pf){ const q0 = nbk.quaternion.clone(), p0 = nbk.position.clone(), s0 = nbk.scale.x; nbk.quaternion.identity(); nbk.position.set(0, 0, 0); nbk.scale.setScalar(1); nbk.updateMatrixWorld(true);
@@ -5836,7 +5836,7 @@ function slateCamera(){ // the screen camera: it sits just above the glass, squa
     up = cw.clone().sub(c.group.position); up.addScaledVector(n, -up.dot(n)); if (up.lengthSq() < 1e-6) up.set(Math.sin(tk.yaw), 0, Math.cos(tk.yaw)); up.normalize(); const rt = new V().crossVectors(up, n);
     hw = axes.reduce((m, A) => m + Math.abs(A.d.dot(rt))*A.e, 0); hh = axes.reduce((m, A) => m + Math.abs(A.d.dot(up))*A.e, 0); marg = 1.12; n = n.clone().addScaledVector(up, 0.18).normalize();
     /* reading his page: the camera stands back far enough to hold the whole spread, which puts it where his head is, so his head is simply not drawn for this one camera; and in the dark the paper is lifted enough for the ink to read */
-    { const lx = NB.tip ? (Math.sign(NB.tip.x/NB.W - 0.5) || 1) : 0; cw.addScaledVector(new V(1, 0, 0).applyQuaternion(q), lx*pf.sz.x*k*0.245); hw = (lx ? 0.27 : 0.5)*pf.sz.x*k; hh = 0.37*pf.sz.z*k; }   /* only the page he is writing on, so the words are large (measured on the page block itself: the spine is its middle; the cover and strap are not counted) */
+    { const lx = NB.tip ? (Math.sign(NB.tip.x/NB.W - 0.5) || 1) : 0; cw.addScaledVector(new V(1, 0, 0).applyQuaternion(q), lx*pf.sz.x*k*0.245); hw = (lx ? 0.27 : 0.5)*pf.sz.x*k; hh = 0.5*pf.sz.z*k; marg = 1.2; }   /* only the page he is writing on, so the words are large (measured on the page block itself: the spine is its middle; the cover and strap are not counted) */
     SCR.page = true; if (hdO && !SCR.hh){ SCR.hh = hdO; hdO.visible = false; } if (NB.pageMats){ const nk = post.uniforms.night.value; for (const m of NB.pageMats) m.emissiveIntensity = 0.5*nk; } }   // (leaning the camera a little toward the far side of the page keeps it out from under his chin)
   else { if (++SCR.miss > 25){ SCR.on = false; scrOff(); DIR.shot = null; } return; } SCR.miss = 0;
   // the camera has to sit between his face and the glass, never behind his head or inside his chest: measure the room there is, come in as close as that allows, and widen the lens to still hold the whole screen
@@ -5844,13 +5844,15 @@ function slateCamera(){ // the screen camera: it sits just above the glass, squa
     if (hdO){ const b = new THREE.Box3().setFromObject(hdO), sz = b.getSize(new THREE.Vector3()); SCR.hd = {c:b.getCenter(new THREE.Vector3()), r:0.5*Math.min(sz.x, sz.y, sz.z)}; }
     SCR.tr = null; if (tr && SCR.hd){ const b = new THREE.Box3().setFromObject(tr); const dn = b.getCenter(new THREE.Vector3()).sub(SCR.hd.c); SCR.tr = {c:SCR.hd.c.clone().addScaledVector(dn.normalize(), Math.min(dn.length(), SCR.hd.r*1.25)), r:SCR.hd.r*0.5}; SCR.hd.r *= 0.82; } }   /* the head box takes in hair and ears, and the torso box takes in the arms, so the head is trimmed to its solid part and only the neck and collar below it are counted */
   const fB = SCR.page ? Math.min(0.42, (((document.getElementById('btns') || {}).offsetWidth || 0) + 26)/innerWidth) : 0;   /* the share of the screen's width the button column covers: the page is fitted into what is left and slid clear of it */
-  const half = Math.max(hh, hw/Math.max(0.5, camera.aspect*(1 - fB)))*marg; let room = 9;
+  const barH = (document.querySelector('.bars') || {}).offsetHeight || 0, vF = Math.max(0.5, 1 - 2*barH/innerHeight);   /* the black film bars cover the top and bottom of the picture: the screen is fitted into what shows between them */
+  const half = Math.max(hh/vF, hw/Math.max(0.5, camera.aspect*(1 - fB)))*marg; let room = 9;
   if (SCR.hd) for (let i = 0; i <= 4; i++){ const k = SCR.tr ? i/4 : 0, P = SCR.tr ? SCR.hd.c.clone().lerp(SCR.tr.c, k) : SCR.hd.c, r = SCR.tr ? SCR.hd.r + (SCR.tr.r - SCR.hd.r)*k : SCR.hd.r, t = P.clone().sub(cw).dot(n), off = P.clone().sub(cw).addScaledVector(n, -t).length();
     if (t > 0 && off < r + 0.04) room = Math.min(room, t - Math.sqrt(Math.max(0, r*r - Math.min(off, r)**2)) - 0.03); if (!SCR.tr) break; }
-  const dWant = half/Math.tan(23*Math.PI/180), d = SCR.page ? dWant : Math.max(0.085, Math.min(dWant, room)), fov = Math.min(84, Math.max(46, 2*Math.atan(half/d)*180/Math.PI)), cwS = fB ? cw.clone().addScaledVector(new THREE.Vector3().crossVectors(up, n).normalize(), fB*half*camera.aspect) : cw, want = cwS.clone().addScaledVector(n, d);
-  if (camera.near !== 0.03){ camera.near = 0.03; camera.updateProjectionMatrix(); try { post.uniforms.near.value = 0.03; } catch (x) {} }   // this close to the glass the usual near limit would cut the screen away
+  const dWant = half/Math.tan(23*Math.PI/180), d = dWant, fov =   /* always far enough back to hold the whole screen or page; whatever of him is in the way (head, hair, arms) is cut by the near plane below, never by coming in closer */ Math.min(84, Math.max(46, 2*Math.atan(half/d)*180/Math.PI)), cwS = fB ? cw.clone().addScaledVector(new THREE.Vector3().crossVectors(up, n).normalize(), fB*half*camera.aspect) : cw, want = cwS.clone().addScaledVector(n, d);
   if (Math.abs(camera.fov - fov) > 0.2){ camera.fov += (fov - camera.fov)*(SCR.snap ? 1 : 0.2); camera.updateProjectionMatrix(); }
-  camera.position.lerp(want, SCR.snap ? 1 : 0.18); controls.target.lerp(cwS, SCR.snap ? 1 : 0.25); SCR.snap = false; camera.up.copy(up); camera.lookAt(controls.target); }
+  camera.position.lerp(want, SCR.snap ? 1 : 0.18); controls.target.lerp(cwS, SCR.snap ? 1 : 0.25); SCR.snap = false; camera.up.copy(up); camera.lookAt(controls.target);
+  { const nr = Math.max(0.03, camera.position.distanceTo(controls.target) - (SCR.page ? 0.1 : 0.065));   /* nothing of him may stand between the lens and the screen: the picture starts just above the glass (his fingers on its edges and the pen on the page stay), so his head, hair and arms can never cover it or cut through the view */
+    if (Math.abs(camera.near - nr) > 0.002){ camera.near = nr; camera.updateProjectionMatrix(); try { post.uniforms.near.value = nr; } catch (x) {} } } }
 function nextCamera(){
   if (SCR.on){ SCR.on = false; scrOff(); }
   { const sl = CH[WHO].props && CH[WHO].props.Slate;   // while he has the slate or tablet in his hands, one of the cameras is the screen itself, close enough to read what he is reading
