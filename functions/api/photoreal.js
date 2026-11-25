@@ -28,7 +28,7 @@ const PROMPT =
   'outline strokes, drawn-on lines or paper texture; a partly real, partly game-looking image is a failure. Re-render the whole frame edge to edge with the same care as the main character. ' +
   'The game draws simple stand-ins; each must become its real counterpart, in the same place, size and silhouette: the pale smooth columns are colossal redwood trunks with deep furrowed ' +
   'red-brown bark, moss and lichen; the flat round canopies on stalks (lollipop shapes) are the leafy crowns of real forest trees seen against the sky; the smooth rounded dark mounds are dense ' +
-  'real shrubs and bramble with individual leaves; the striped wavy-line logs are real fallen logs with cracked bark, moss and splits; the flat pale floor with scattered leaf shapes is real ' +
+  'real wild shrubs and bramble with individual leaves, ragged and irregular, never clipped, round topiary balls; the striped wavy-line logs are real fallen logs with cracked bark, moss and splits; the flat pale floor with scattered leaf shapes is real ' +
   'forest floor of damp soil, leaf litter, twigs and needles; the plain gray or tan disks and pucks are real stones, stumps or tins; flat ribbon grasses are real grass and ferns; ' +
   'smooth domed mushroom shapes are real mushrooms; the sky keeps its colors and cloud layout but becomes a real photographed sky. Wood looks like real wood, metal like metal, cloth like cloth. ' +
   'NOTHING PASSES THROUGH ANYTHING. The frame comes from a game engine, so a foot may sink into a log, a leg into a rock, a hand into a table, a body into the ground or a staff through a wall. ' +
@@ -70,9 +70,9 @@ const STYLE_TEXT = {
     'REALISM CHANGES SURFACES, NEVER THE STAGING. This is a trace-over of the frame, not a new photo of a similar scene. Each character stays on the exact spot he occupies in the frame, ' +
     'at the same distance from the camera, facing the same way, with the same body pose, the same head tilt and the same direction of gaze; a character facing the camera with his head up ' +
     'still faces the camera with his head up. Only his anatomy becomes natural, around the same center point: do not sit him somewhere else, turn him, bow his head or re-pose his limbs. ' +
-    'He wears and holds exactly what he wears and holds in the frame, the same way: goggles over the eyes stay over the eyes. ' +
+    'He wears and holds exactly what he wears and holds in the frame, the same way: goggles over the eyes stay over the eyes, covering them, whatever any reference photo shows. ' +
     'Every fire, lantern, table, crate, pile of stones, tool, pole and tree stays exactly where it is in the frame, the same size and the same count: a fire ring in the center foreground ' +
-    'stays in the center foreground with the character behind it, a lantern under a table stays lit under that table. Never add a prop, a second crate, loose tools or wheels, and never leave one out. ' +
+    'stays in the center foreground with the character behind it, a lantern standing on the ground under a table stays on the ground under that table, never lifted onto the tabletop. Never add a prop, a second crate, loose tools or wheels, and never leave one out. ' +
     'Each tree keeps its own trunk width and its own silhouette: a slim trunk with a low leafy crown stays a slim tree with that crown, never a second giant redwood.',
 };
 
@@ -139,7 +139,7 @@ const SKETCHES = {
   gage_realistic: ['sketches/gage_real_ref.jpg'],
 };
 const REF_NOTE = {
-  gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, ears, hair, goggles, clothes, wooden clogs, same gritty photographic realism). Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background.',
+  gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, ears, hair, goggles, clothes, wooden clogs, same gritty photographic realism). Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background, and do not copy where he wears his goggles: if the first image shows the goggles over his eyes, they are over his eyes.',
   token: ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of Token: match his head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.',
   gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, make him look exactly like he does in that photo (same face, head shape, goggles, hair, clothes, wooden shoes, skin and materials, same live-action finish). The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp or background, and do not copy the pencil style.',
 };
