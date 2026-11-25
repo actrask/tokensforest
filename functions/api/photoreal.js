@@ -142,13 +142,13 @@ function directed(shot, cast, aspectOk) {
 // the maker's sketches, sent as extra reference images to models that take several images
 const SKETCHES = {
   token: ['sketches/token_portrait.jpg', 'sketches/token_turnaround.jpg'],
-  gage: ['sketches/gage_film_ref.jpg', 'sketches/gage_goggles.jpg', 'sketches/gage_turnaround.jpg'],
+  gage: ['sketches/gage_stylized_ref.jpg', 'sketches/gage_goggles.jpg', 'sketches/gage_turnaround.jpg'],
   gage_realistic: ['sketches/gage_real_ref.jpg'],
 };
 const REF_NOTE = {
   gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, hair, goggles, clothes, wooden clogs, same gritty photographic realism), except his ears: give him ordinary rounded human ears, never the pointed ears of that photo. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background, and do not copy where he wears his goggles: if the first image shows the goggles over his eyes, they are over his eyes.',
   token: ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of Token: match his head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.',
-  gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, make him look exactly like he does in that photo (same face, head shape, goggles, hair, clothes, wooden shoes, skin and materials, same live-action finish). The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp or background, and do not copy the pencil style.',
+  gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, make him look exactly like he does in that photo (same face, head shape, goggles, hair, clothes, wooden shoes, skin and materials, same live-action finish). The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp, fire, night or background (it happens to be a night photo: by day he is lit by the day in the first image), and do not copy the pencil style.',
 };
 
 // model choices; the page sends one of these keys (default first)
