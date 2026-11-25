@@ -72,7 +72,7 @@ const STYLE_TEXT = {
     'still faces the camera with his head up. Only his anatomy becomes natural, around the same center point: do not sit him somewhere else, turn him, bow his head or re-pose his limbs. ' +
     'He wears and holds exactly what he wears and holds in the frame, the same way: goggles over the eyes stay over the eyes, covering them, whatever any reference photo shows. ' +
     'Every fire, lantern, table, crate, pile of stones, tool, pole and tree stays exactly where it is in the frame, the same size and the same count: a fire ring in the center foreground ' +
-    'stays in the center foreground with the character behind it, a lantern standing on the ground under a table stays on the ground under that table, never lifted onto the tabletop. Never add a prop, a second crate, loose tools or wheels, and never leave one out. ' +
+    'stays in the center foreground with the character behind it, a lantern glowing low down between the legs of a table stays low down between the legs, on the ground or lower shelf, and the tabletop above it stays without a lantern. Never add a prop, a second crate, loose tools or wheels, and never leave one out. ' +
     'Each tree keeps its own trunk width and its own silhouette: a slim trunk with a low leafy crown stays a slim tree with that crown, never a second giant redwood.',
 };
 
@@ -84,7 +84,7 @@ const GAGE_NOTE = {
     'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
     'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ',
   realistic: 'Character notes: Gage is a real, living young forest kid of about ten with slightly pointed ears, a wild mop of stiff, spiky brown hair, ' +
-    'a dirt-smudged face, worn brass goggles with smoked lenses, worn exactly as in the frame (over his eyes unless the frame clearly shows them pushed up), dusty, patched canvas work clothes, ' +
+    'a dirt-smudged face, worn brass goggles strapped over his eyes, the smoked lenses covering both eyes so his eyes are only faintly visible through the dark glass (never pushed up on his forehead or hair, even if a reference photo shows that), dusty, patched canvas work clothes, ' +
     'and big hand-carved wooden clogs with visible grain. ',
 };
 const TOKEN_NOTE =
