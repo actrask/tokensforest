@@ -24,6 +24,13 @@ const PROMPT =
   'Use only the light sources already in the frame; never add fires, candles, lamps or glows that are not there. ' +
   'If the frame is indoors, inside a room or the hollow of a tree, it stays indoors with its walls and furniture; never move the scene outdoors or to water, ' +
   'and never add vehicles, boats or new furniture. ' +
+  'EVERY PIXEL IS RE-RENDERED: nothing in the result may still look like the game frame. Not one object, surface or patch of ground may keep its flat colors, smooth shading, ' +
+  'outline strokes, drawn-on lines or paper texture; a partly real, partly game-looking image is a failure. Re-render the whole frame edge to edge with the same care as the main character. ' +
+  'The game draws simple stand-ins; each must become its real counterpart, in the same place, size and silhouette: the pale smooth columns are colossal redwood trunks with deep furrowed ' +
+  'red-brown bark, moss and lichen; the flat round canopies on stalks (lollipop shapes) are the leafy crowns of real forest trees seen against the sky; the smooth rounded dark mounds are dense ' +
+  'real shrubs and bramble with individual leaves; the striped wavy-line logs are real fallen logs with cracked bark, moss and splits; the flat pale floor with scattered leaf shapes is real ' +
+  'forest floor of damp soil, leaf litter, twigs and needles; the plain gray or tan disks and pucks are real stones, stumps or tins; flat ribbon grasses are real grass and ferns; ' +
+  'smooth domed mushroom shapes are real mushrooms; the sky keeps its colors and cloud layout but becomes a real photographed sky. Wood looks like real wood, metal like metal, cloth like cloth. ' +
   'NOTHING PASSES THROUGH ANYTHING. The frame comes from a game engine, so a foot may sink into a log, a leg into a rock, a hand into a table, a body into the ground or a staff through a wall. ' +
   'Repair every such intersection the way a real photograph would show it: feet rest on top of the ground, rock or log, a body stands in front of or beside an object, hands touch surfaces without entering them, ' +
   'and objects are whole and solid. If feet or legs show on the near side of a log, rock or table while the body is behind it, the feet are wrong: '+
