@@ -84,16 +84,16 @@ const STYLE_TEXT = {
 };
 
 const GAGE_ATTITUDE =
-  'MOST IMPORTANT, GAGE\'S ATTITUDE: Gage is punk rock. He is NOT cute, sweet, friendly, innocent or a mascot, and the picture fails if he looks like one. ' +
-  'He is a scrappy, defiant kid with a tired, hopeful disdain: worn down from hunting for the truth of what makes a life happy, unimpressed by everything easy, still stubbornly looking. ' +
-  'Make it obvious at a glance: his goggle lenses are DARK smoked glass, nearly black, reflecting the scene, so his eyes are hidden or only dim heavy-lidded shapes behind them (never big, round, bright, clearly visible eyes); ' +
-  'his mouth is a sneer or a hard flat scowl, one side of the upper lip slightly lifted, corners down, never any smile; his chin is down and his head tipped so he looks out from under his brow; ' +
-  'his shoulders slouch, one thumb is hooked in his belt or a fist is closed at his side whenever a hand is free; his hair is a wild, jagged, unwashed crest; ' +
-  'there is soot and grease on his cheek, nose and hands, a scuff or small scab, sleeves shoved up unevenly, clothes worn hard, frayed and stained, his vest scratched and dull. ' +
-  'He looks at his work or off to the side with bored, guarded contempt, never at the camera. Keep his place and overall pose from the frame; change his face, hands, grime and bearing. ';
+  'MOST IMPORTANT, GAGE\'S ATTITUDE: Gage is punk rock in the cool, unbothered way, never the angry way. He is NOT cute, sweet, wide-eyed or a mascot, and he is NOT angry, pissed off, scowling, sneering, sulking or menacing either. ' +
+  'He is calm, dry and self-possessed: a scrappy kid a little tired from hunting for the truth of what makes a life happy, hard to impress, quietly amused by the world, and underneath it still hopeful. Think deadpan and wry, like a young musician leaning on an amp between songs. ' +
+  'Show it this way: a relaxed face with the mouth closed in a faint, lopsided half-smirk (one corner barely lifted), never a grin and never a frown; brows relaxed; ' +
+  'his goggle lenses are smoked and dark enough that his eyes show only dimly through them, heavy-lidded, calm and a little sleepy, never big, round or bright, and never glaring; ' +
+  'an easy slouch with his weight on one leg, shoulders loose, head tipped slightly; when a hand is free it rests in a pocket or a thumb hooks in his belt, never fists and never hands on hips. ' +
+  'His hair keeps its few large, sharp, stiff spikes; his buttoned leather vest and work shirt are intact, just lived-in: sleeves shoved up, a smudge of grease on one cheek and on his fingers, scuffed clogs. Not ragged, torn or filthy. ' +
+  'He looks at his work or off to the side, thinking, never at the camera. Keep his place and overall pose from the frame; the attitude lives in his face, hands and bearing. ';
 const GAGE_NOTE = {
   stylized: 'Character notes: Gage is a stylized young tinkerer, not a realistic human boy. His design: an oversized, round head about as large as his whole torso; ' +
-    'huge round brass-framed goggles with dark smoked lenses, nearly black, covering most of his face, his eyes hidden or only dimly visible behind them; ' +
+    'huge round brass-framed goggles with dark smoked lenses covering most of his face, his eyes only dimly visible behind them; ' +
     'a few large, sharp, dramatic spikes of hair swept up and back from his head, stiff and pointed, real hair but never a soft or messy mop; ' +
     'a small face with a small nose and mouth, smooth young skin with no wrinkles; a small, slender body with thin arms and legs; ' +
     'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
@@ -156,7 +156,7 @@ const SKETCHES = {
 const REF_NOTE = {
   gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, hair, goggles, clothes, wooden clogs, same gritty photographic realism), except his ears: give him ordinary rounded human ears, never the pointed ears of that photo. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background, and do not copy where he wears his goggles: if the first image shows the goggles over his eyes, they are over his eyes.',
   token: ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of Token: match his head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.',
-  gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, take his build and costume from that photo (head shape, hair, goggle frames, clothes, wooden shoes, skin and materials, same live-action finish), but NOT his expression, his eyes or his clean look: his face, his dark lenses, his grime and his bearing come from GAGE\'S ATTITUDE. The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp, fire, night or background (it happens to be a night photo: by day he is lit by the day in the first image), do not copy its facial expression (his expression comes from the attitude described in the character notes: unsmiling, heavy-lidded, a skeptical half-scowl), and do not copy the pencil style.',
+  gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, take his build and costume from that photo (head shape, hair, goggle frames, clothes, wooden shoes, skin and materials, same live-action finish), but NOT his expression, his eyes or his clean look: his face, his smoked lenses and his bearing come from GAGE\'S ATTITUDE. The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp, fire, night or background (it happens to be a night photo: by day he is lit by the day in the first image), do not copy its facial expression (his expression comes from GAGE\'S ATTITUDE: calm, heavy-lidded, a faint wry half-smirk), and do not copy the pencil style.',
 };
 
 // model choices; the page sends one of these keys (default first)
