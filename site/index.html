@@ -1845,7 +1845,7 @@ const gageGroup = new THREE.Group(); scene.add(gageGroup);
 const RIM = {color:{value:new THREE.Color(0.6,0.75,1.0)}, str:{value:0}, dir:{value:new THREE.Vector3(0,0.3,-1)}};
 const backLight = new THREE.DirectionalLight(0xffffff, 0); scene.add(backLight, backLight.target);
 let cineAmt = 0, roomAmt = 0, lastRoom = false;
-const PEEK = {on:false, focus:null, nb:false};
+const PEEK = {on:false, focus:null, nb:false, look:false};   // look: he is home, and the viewer has stepped back to look around the whole room
 function peekNotebook(){ // while peeking into the empty room: a tap brings the camera down over the notebook on his table, square to the pages and the right way up; the next tap returns to the room
   const o = NB.table; if (!o || !o.visible || isInside(CH.token.tok.x, CH.token.tok.z)){ return; }
   PEEK.nb = !PEEK.nb; hideTip();
@@ -5451,7 +5451,11 @@ addEventListener('blur', () => FREE.keys.clear());
   canvas.addEventListener('pointerup', e => { if (e.pointerType !== 'touch') return; const now = performance.now();
     if (now - last.t < 320 && Math.hypot(e.clientX-last.x, e.clientY-last.y) < 30) { jump(e.clientX, e.clientY); last.t = 0; } else last = {t:now, x:e.clientX, y:e.clientY}; });
 }
-peekBtn.onclick = () => { if (isInside(tok.x, tok.z) && !FREE.on) return; PEEK.on = !PEEK.on; PEEK.focus = null; PEEK.nb = false; hideTip(); };
+peekBtn.onclick = () => { if (isInside(tok.x, tok.z) && !FREE.on){   /* he is home: step back and look around the whole room (shelves, table, walls) on a wide lens, or return to him */
+    PEEK.look = !PEEK.look; DIR.on = false; DIR.idle = 0; peekBtn.textContent = PEEK.look ? 'Back to Token' : 'Look around the room';
+    if (PEEK.look){ controls.target.set(TREE.x, FLOOR_Y + 0.85, TREE.z); camera.position.set(TREE.x + 0.25, FLOOR_Y + 1.25, TREE.z + 1.4); showBanner('Drag to look around his room', 'hint'); setTimeout(() => { if (banner.dataset.kind === 'hint') showBanner(''); }, 5000); }
+    document.body.classList.remove('menu'); const mb = document.getElementById('menuBtn'); if (mb) mb.textContent = '☰ Menu'; return; }
+  PEEK.on = !PEEK.on; PEEK.focus = null; PEEK.nb = false; hideTip(); };
 const statusTxt = document.getElementById('statusTxt'), clockEl = document.getElementById('clock');
 const clock = new THREE.Clock();
 let lastUI = 0, lastStatus = '';
@@ -5782,7 +5786,7 @@ const CAM_ORDER = {still:['tableau', 'cu', 'flat', 'still', 'top', 'insert', 'pu
 /* ---- inside the burrow: the same film grammar in a room two strides wide. Wide lenses, the camera kept inside the dome, and every angle checked against his own head and the furniture:
    a wide across the room, a tight close-up on the face, an insert on the hands and the page, over the shoulder at what he writes, the low angle up from the table (the trunk shot), a profile; asleep, from above the bed and close on the face ---- */
 const ROOM_NAME = {'room-wide':'Across the room', 'room-face':'Close-up', 'room-insert':'Hands', 'room-ots':'Over the shoulder', 'room-low':'From the table', 'room-profile':'Profile', 'room-bed':'Above the bed', 'room-bedface':'Close-up'};
-function tokInRoom(){ return WHO === 'token' && isInside(tok.x, tok.z) && !(tok.walking && tok.z > -3.4) && !PEEK.on; }
+function tokInRoom(){ return WHO === 'token' && isInside(tok.x, tok.z) && !(tok.walking && tok.z > -3.4) && !PEEK.on && !PEEK.look; }
 function roomShot(S, now){
   const occ = dirOccluders(now), R = S.headR, V = (x, y, z) => new THREE.Vector3(x, y, z), dir = a => V(Math.sin(a), 0, Math.cos(a));
   const pull = C => { const hy = Math.max(0.28, Math.min(1.8, C.y - Y0)); C.y = Y0 + hy; const rmax = Math.max(0.2, 1.85*Math.sqrt(Math.max(0, 1 - (hy/2.25)**2)) - 0.36), dx = C.x - TREE.x, dz = C.z - TREE.z, rr = Math.hypot(dx, dz);
@@ -6094,14 +6098,15 @@ function frame(){
   const roam = FREE.on && !RP.on;
   const wantRoom = PEEK.on || (!roam && tokIn);
   roomAmt += ((wantRoom ? 1 : 0) - roomAmt) * Math.min(1, dt*2.5);
+  if (!tokIn && PEEK.look){ PEEK.look = false; if (wantRoom === lastRoom) peekBtn.textContent = wantRoom ? 'Back outside' : 'Peek inside'; }
   if (wantRoom !== lastRoom){
-    lastRoom = wantRoom;
+    lastRoom = wantRoom; PEEK.look = false;
     if (wantRoom){ controls.minDistance = 0.3; controls.maxDistance = 1.45; controls.maxPolarAngle = Math.PI*0.62;
       controls.target.set(TREE.x+0.05, FLOOR_Y+0.75, TREE.z+0.2); camera.position.set(TREE.x+0.45, FLOOR_Y+1.15, TREE.z+1.35); }
     else { controls.minDistance = 2.5; controls.maxDistance = 22; controls.maxPolarAngle = Math.PI*0.47;
       const c = roam ? (isInside(controls.target.x, controls.target.z) ? {x:DOOR_OUT.x, z:DOOR_OUT.z+1.5} : {x:controls.target.x, z:controls.target.z}) : {x:tok.x, z:tok.z};
       controls.target.set(c.x, G(c.x,c.z)+0.6, c.z); camera.position.set(c.x+2.4, G(c.x,c.z)+1.9, c.z+4.6); }
-    peekBtn.textContent = wantRoom ? (tokIn ? 'Inside with Token' : 'Back outside') : 'Peek inside';
+    peekBtn.textContent = wantRoom ? (tokIn ? 'Look around the room' : 'Back outside') : 'Peek inside';
   }
   if (RP.on && wantRoom && !tokIn){ RP.ang += dt*0.18; const d = wantRoom ? 1.05 : 4.2; camera.position.set(controls.target.x + Math.sin(RP.ang)*d, controls.target.y + (wantRoom ? 0.45 : 1.5), controls.target.z + Math.cos(RP.ang)*d); }
   controls.enablePan = roam && !wantRoom; controls.screenSpacePanning = false;
@@ -6129,7 +6134,7 @@ function frame(){
   } else if (!NB.open) {   // (the notebook reader holds its own camera)
   camOff.copy(camera.position).sub(controls.target);
   const tgt = wantRoom
-    ? (tokIn ? new THREE.Vector3(tok.x, FLOOR_Y + 0.45, tok.z) : (PEEK.focus || new THREE.Vector3(TREE.x+0.05, FLOOR_Y+0.75, TREE.z-0.2)))
+    ? (tokIn && !PEEK.look ? new THREE.Vector3(tok.x, FLOOR_Y + 0.45, tok.z) : PEEK.look ? new THREE.Vector3(TREE.x, FLOOR_Y + 0.85, TREE.z) : (PEEK.focus || new THREE.Vector3(TREE.x+0.05, FLOOR_Y+0.75, TREE.z-0.2)))
     : new THREE.Vector3(tok.x, G(tok.x,tok.z)+0.6, tok.z);
   controls.target.lerp(tgt, Math.min(1, dt*3));
   camera.position.copy(controls.target).add(camOff);
@@ -6141,7 +6146,7 @@ function frame(){
     const dx = camera.position.x - TREE.x, dz = camera.position.z - TREE.z, rr = Math.hypot(dx, dz);
     if (rr > rmax){ camera.position.x = TREE.x + dx/rr*rmax; camera.position.z = TREE.z + dz/rr*rmax; }
   }
-  if (!((DIR.on || RP.on) && (!wantRoom || tokInRoom()) && !window.__lock && !FREE.on)){ const f = window.__baseFov + (Math.max(window.__baseFov, 64) - window.__baseFov) * roomAmt; if (Math.abs(camera.fov - f) > 0.05){ camera.fov = f; camera.updateProjectionMatrix(); } }
+  if (!((DIR.on || RP.on) && (!wantRoom || tokInRoom()) && !window.__lock && !FREE.on)){ const f0 = window.__baseFov + (Math.max(window.__baseFov, 64) - window.__baseFov) * roomAmt, fL = innerWidth >= innerHeight ? 74 : 84, f = PEEK.look ? camera.fov + (fL - camera.fov)*Math.min(1, dt*3) : f0; if (Math.abs(camera.fov - f) > 0.05){ camera.fov = f; camera.updateProjectionMatrix(); } }
   { DIR.idle += dt; if (!DIR.on && !FREE.on && DIR.idle > 25){ DIR.on = true; DIR.shot = null; camOff.set(0,0,0); }
     const dofT = (DIR.on && !FREE.on && (!wantRoom || tokInRoom()) && !window.__lock) || RP.on ? 0.6 : 0; post.uniforms.dofAmt.value += (dofT - post.uniforms.dofAmt.value)*Math.min(1, dt*2);
     if (!DIR.on || FREE.on) post.uniforms.focusD.value = camera.position.distanceTo(controls.target);
@@ -6149,6 +6154,8 @@ function frame(){
   if (window.__lock){ controls.target.copy(window.__lock.t); camera.position.copy(window.__lock.p); camera.lookAt(window.__lock.t); if (window.__lock.fov && Math.abs(camera.fov - window.__lock.fov) > 0.05){ camera.fov = window.__lock.fov; camera.updateProjectionMatrix(); } }
   // inside light: daylight dims, the lantern takes over
   if (window.__hemiBase != null){ hemi.intensity *= (1 - 0.55*roomAmt); }
+  { let L = window.__lookFill; if (!L && PEEK.look){ L = window.__lookFill = new THREE.PointLight(0xffe2b8, 0, 7, 1.4); L.position.set(TREE.x, FLOOR_Y + 1.55, TREE.z + 0.1); scene.add(L); }   /* looking around the room: a soft warm fill, as if the lantern were turned up, so the shelves read even at night */
+    if (L){ L.intensity += ((PEEK.look ? 3.2 : 0) - L.intensity)*Math.min(1, dt*3); L.visible = L.intensity > 0.01; } }
   { const sunS = DIR.on && DIR.shot && /^sun-/.test(DIR.shot.kind || ''); if (sunS){ const near = /face|profile/.test(DIR.shot.kind);   // magic hour, lit the way it is shot: into the sun for the backlight, but exposed so the shadow side keeps its detail. The sky is a big soft cool source at this hour, so it fills him and the ground; only the long shots let him go to a shape
       hemi.intensity *= near ? 0.9 : 0.55; sun.color.setRGB(1.0, 0.62, 0.34); sun.intensity = 3.4*(1 - 0.8*WXS.cloud);
       const cdx = camera.position.x - token.position.x, cdz = camera.position.z - token.position.z, cl = Math.hypot(cdx, cdz) || 1;
