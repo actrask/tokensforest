@@ -47,7 +47,9 @@
     return out.join(' '); }
   function draw(cv, p){ var t = subject(p.words).toLowerCase(), R = rngOf(p.key + t.slice(0, 40)), W = cv.width, H = cv.height, g = cv.getContext('2d');
     g.fillStyle = p.canvas ? '#efe6d2' : '#f4eedf'; g.fillRect(0, 0, W, H);
+    if (cv.fine) g.globalAlpha = 0;   /* the full-size finish makes its own paper grain; these little flecks would come out as blocks there (still drawn, unseen, so the painting's random sequence stays the same) */
     for (var i = 0; i < 2600; i++){ g.fillStyle = 'rgba(120,100,70,' + (0.025 + 0.03*R()) + ')'; g.fillRect(R()*W, R()*H, 1 + R()*1.5, 1); }   // paper tooth
+    g.globalAlpha = 1;
     var cols = []; Object.keys(COL).forEach(function(k){ if (COL[k] && new RegExp('\\b' + k + '\\b').test(t)) cols.push(COL[k]); });
     if (/fire|firelight|orange/.test(t) && cols.indexOf(COL.orange) < 0) cols.push(COL.orange);
     var c0 = cols[0] || COL.ochre, c1 = cols[1] || cols[0] || COL.blue, did = false;
@@ -93,9 +95,35 @@
       card.querySelectorAll('button.pntD').forEach(function(bt){ bt.onclick = function(){ save(L[+bt.dataset.i], bt); }; });
       var cl = card.querySelectorAll('button'); cl[cl.length - 1].onclick = function(){ rc.style.display = 'none'; }; }); }
   /* the same painting, drawn again six times larger (3600 pixels wide) and handed over as a PNG: the phone's share sheet where there is one (Save Image), a plain download elsewhere */
+  /* full-size finish: enlarged, the washes are only smooth shapes, which reads as blur. Real watercolor has detail at this scale, so it is added pixel by pixel at the final size:
+     the tooth of cold-press paper (lit from the upper left), pigment settling into the hollows of the paper and thinning on its peaks, a slow mottling inside each wash,
+     and the darker line where a wash dried at its edge. All of it is seeded from the painting itself, so the same painting always comes out the same. */
+  function enhance(cv, p){ var W = cv.width, H = cv.height, g = cv.getContext('2d'), R = rngOf('fin' + p.key), N = 512, M = N - 1;
+    function tile(rad, passes){ var a = new Float32Array(N*N), b = new Float32Array(N*N), i, x, y, k, t; for (i = 0; i < N*N; i++) a[i] = R();
+      for (k = 0; k < passes; k++){ for (y = 0; y < N; y++) for (x = 0; x < N; x++){ t = 0; for (i = -rad; i <= rad; i++) t += a[y*N + ((x + i) & M)]; b[y*N + x] = t; }
+        for (y = 0; y < N; y++) for (x = 0; x < N; x++){ t = 0; for (i = -rad; i <= rad; i++) t += b[((y + i) & M)*N + x]; a[y*N + x] = t; } }
+      var mn = 1e30, mx = -1e30; for (i = 0; i < N*N; i++){ if (a[i] < mn) mn = a[i]; if (a[i] > mx) mx = a[i]; } for (i = 0; i < N*N; i++) a[i] = (a[i] - mn)/(mx - mn)*2 - 1; return a; }
+    var fine = tile(2, 2), mid = tile(7, 2), slow = tile(24, 2);
+    var pc = p.canvas ? [239, 230, 210] : [244, 238, 223];
+    // a soft, small copy of the painting: where the paint is thinner than its surroundings is an edge
+    var sw = Math.round(W/10), sh = Math.round(H/10), c1 = document.createElement('canvas'), c2 = document.createElement('canvas'); c1.width = sw; c1.height = sh; c2.width = Math.round(sw/2.5); c2.height = Math.round(sh/2.5);
+    var g1 = c1.getContext('2d'), g2 = c2.getContext('2d'); g1.drawImage(cv, 0, 0, sw, sh); g2.drawImage(c1, 0, 0, c2.width, c2.height); g1.drawImage(c2, 0, 0, sw, sh);
+    var sd = g1.getImageData(0, 0, sw, sh).data, soft = new Float32Array(sw*sh), i; for (i = 0; i < sw*sh; i++) soft[i] = Math.min(1, (Math.abs(sd[i*4] - pc[0]) + Math.abs(sd[i*4 + 1] - pc[1]) + Math.abs(sd[i*4 + 2] - pc[2]))/110);
+    var band = 256; for (var y0 = 0; y0 < H; y0 += band){ var bh = Math.min(band, H - y0), im = g.getImageData(0, y0, W, bh), d = im.data;
+      for (var yy = 0; yy < bh; yy++){ var y = y0 + yy, fy = (y + 0.5)/10 - 0.5, sy = Math.max(0, Math.min(sh - 2, Math.floor(fy))), ty = Math.max(0, Math.min(1, fy - sy));
+        for (var x = 0; x < W; x++){ var o = (yy*W + x)*4, r = d[o], gg = d[o + 1], bb = d[o + 2];
+          var am = (Math.abs(r - pc[0]) + Math.abs(gg - pc[1]) + Math.abs(bb - pc[2]))/110; if (am > 1) am = 1;
+          var hF = fine[(y & M)*N + (x & M)], hM = mid[((y*0.5) & M)*N + ((x*0.5) & M)], hh = 0.6*hF + 0.4*hM;
+          var hU = 0.6*fine[((y - 2) & M)*N + ((x - 2) & M)] + 0.4*mid[(((y - 2)*0.5) & M)*N + (((x - 2)*0.5) & M)], lit = hh - hU;   // slope toward the light
+          var sl = slow[((y*0.21) & M)*N + ((x*0.21) & M)];
+          var fx = (x + 0.5)/10 - 0.5, sx = Math.max(0, Math.min(sw - 2, Math.floor(fx))), tx = Math.max(0, Math.min(1, fx - sx)), q = sy*sw + sx;
+          var sf = (soft[q]*(1 - tx) + soft[q + 1]*tx)*(1 - ty) + (soft[q + sw]*(1 - tx) + soft[q + sw + 1]*tx)*ty, edge = am - sf - 0.03; if (edge < 0) edge = 0; if (edge > 0.5) edge = 0.5;
+          var f = 1 + 0.05*lit + 0.012*hh + am*(0.16*hh + 0.07*sl) - edge*0.5;
+          d[o] = r*f; d[o + 1] = gg*f; d[o + 2] = bb*f; } }
+      g.putImageData(im, 0, y0); } }
   function save(p, bt){ var K = 6, w = 600, h = p.canvas ? 520 : 420, cv = document.createElement('canvas'); cv.width = w*K; cv.height = h*K; var g = cv.getContext('2d'); g.scale(K, K);
     var old = bt.textContent; bt.textContent = 'Painting it full size…'; bt.disabled = true; var done = function(msg){ bt.textContent = msg || old; bt.disabled = false; if (msg) setTimeout(function(){ bt.textContent = old; }, 4000); };
-    setTimeout(function(){ try { draw({width:w, height:h, getContext:function(){ return g; }}, p); } catch (e) { return done('Could not draw it'); }
+    setTimeout(function(){ try { draw({width:w, height:h, fine:true, getContext:function(){ return g; }}, p); enhance(cv, p); } catch (e) { return done('Could not draw it'); }
       var name = 'token-painting-' + String(p.title || 'painting').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '-' + String(p.at || '').slice(0, 10) + '.png';
       cv.toBlob(function(bl){ if (!bl) return done('Could not save it');
         var plain = function(){ var u = URL.createObjectURL(bl), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 30000); done('Saved'); };
