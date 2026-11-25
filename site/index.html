@@ -1959,6 +1959,7 @@ function propInst(kind){ // one instance per character per kind, parked in the s
   if (!PROPS[kind]) return null; const o = PROPS[kind].clone(); o.visible = false; o.matrixAutoUpdate = true; scene.add(o); c.props[kind] = o;
   if (kind === 'NotebookOpen' && WHO === 'token') nbSkin(o);   // his notebook shows his real pages
   if (kind === 'NotebookOpen' && WHO === 'gage') nbSkin(o, GNB.tex);   // and Gage's shows Gage's
+  if (kind === 'Slate') o.traverse(x => { if (x.isMesh && x.material && /graphite/i.test(x.material.name || '')) x.visible = false; });   // no stick stuck to the slate's side
   if (kind === 'Slate'){ const L = SLATE_GLOWS.pop() || new THREE.SpotLight(0x66ff99, 0, 1.6, 1.2, 1, 1.8); L.position.set(0, 0.05, 0); L.target.position.set(0, 1, 0); o.add(L); o.add(L.target); o.userData.glow = L; pinLight(L, o);   /* the glow leaves the glass only: a soft cone out of the front of the screen, nothing behind it */
     try { // what is on the screen: a face laid over the glass that shows what he is really reading (see slateDraw)
       o.updateMatrixWorld(true); const inv = o.matrixWorld.clone().invert(), pts = [], all = []; let scrM = null;
@@ -2393,7 +2394,7 @@ function haloLights(nightK){
   for (const q of (window.__elderL || [])) list.push([q[0], q[1], q[2], 0xffd27a, 0.25 + 0.75*nightK, 0.3]);
   for (const id in CH){ const sl = CH[id].props && CH[id].props.Slate; if (sl && sl.visible && sl.userData.glow && sl.userData.glow.intensity > 0.01){ const sc = sl.userData.scr, w = sc ? sl.localToWorld(sc.c.clone().addScaledVector(sc.n, 0.03)) : sl.getWorldPosition(new THREE.Vector3());
       let face = 1; if (sc){ const wn = sc.n.clone().transformDirection(sl.matrixWorld), toCam = camera.position.clone().sub(w).normalize(); face = Math.max(0, Math.min(1, (wn.dot(toCam) - 0.05)/0.4)); }   /* the screen's soft glow is only seen from the screen side: from behind the slate there is none, so nothing shines through its back */
-      if (face > 0.01) list.push([w.x, w.y, w.z, 0x66ff99, 0.55*nightK*face, 0.14]); } }
+      if (face > 0.01) list.push([w.x, w.y, w.z, 0x66ff99, 0.275*nightK*face, 0.14]); } }
   const v = new THREE.Vector3(), vw = new THREE.Vector3(); let n = 0;
   for (const [x, y, z, c, k, R] of list){ if (n >= 12 || k <= 0.01) continue;
     vw.set(x, y, z).applyMatrix4(camera.matrixWorldInverse); if (vw.z > -0.3) continue;
@@ -3200,7 +3201,7 @@ function motionPose(dt, t){
       else { const q = basisQ(ax, up); if (pr.spin) q.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pr.spin)); o.quaternion.copy(q);
         o.position.copy(hw).addScaledVector(ax, -(pr.off || 0)*pr.s); if (pr.kind === 'CordCoil') o.position.addScaledVector(U, 0.01); } }
     else { o.position.copy(pr.pos); o.quaternion.copy(basisQ(pr.x, pr.y)); if (pr.lap) lapClear(o, pr, mo, P, Hc, dt); }
-    if (o.userData.glow) o.userData.glow.intensity = glow ? 0.06 + 1.0*(post.uniforms.night.value) : 0; }
+    if (o.userData.glow) o.userData.glow.intensity = glow ? 0.03 + 0.5*(post.uniforms.night.value) : 0; }   // (the screen's green glow at half the strength it had)
   if (c.props) for (const k in c.props) if (!used.has(k)) c.props[k].visible = false;
   { const X = (c.xp ||= {}), on = new Set();
     for (const e of xps){ let o = X[e.key]; if (!o){ o = X[e.key] = e.mk(); scene.add(o); } on.add(e.key); o.visible = true;
@@ -4474,7 +4475,7 @@ function makeTreasure(kind, color){
     case 'map': put(CylG(0.02,0.02,0.15,10), c ? 'main' : 0xe3d4ac, 0,0.02,0, 0,0,Math.PI/2); put(TorG(0.021,0.003,4,12), 0x8a3a2a, 0,0.02,0, 0,Math.PI/2,0); break;
     case 'bottle': put(CylG(0.025,0.03,0.09,12), c ? 'main' : 0x5f8f7a, 0,0.045,0); put(CylG(0.01,0.012,0.04,8), c ? 'main' : 0x5f8f7a, 0,0.11,0); break;
     case 'berries': for (let k=0;k<7;k++) put(SphG(0.014,8,6), c ? 'main' : 0x7a2338, Math.cos(k*0.9)*0.022*(k%3?1:0.4), 0.015+(k%2)*0.012, Math.sin(k*0.9)*0.022*(k%3?1:0.4)); put(SphG(0.05,10,6), 0x5d7a3e, 0,0.004,0, 0,0,0, 1,0.06,0.7); break;
-    case 'tablet': put(new THREE.BoxGeometry(0.17,0.012,0.12), c ? 'main' : 0x2d3136, 0,0.006,0); put(new THREE.BoxGeometry(0.14,0.002,0.095), 0x5f7484, 0,0.013,0); put(new THREE.BoxGeometry(0.05,0.003,0.004), 0xd8dde0, 0.03,0.015,0.02, 0,0.7,0); break;
+    case 'tablet': put(new THREE.BoxGeometry(0.17,0.012,0.12), c ? 'main' : 0x2d3136, 0,0.006,0); put(new THREE.BoxGeometry(0.14,0.002,0.095), 0x5f7484, 0,0.013,0); break;   // (no stylus stuck on it)
     case 'needle': put(new THREE.BoxGeometry(0.11,0.004,0.006), c ? 'main' : 0xb9c0c6, 0,0.003,0); break;
     case 'lid': put(CylG(0.05,0.052,0.012,20), c ? 'main' : 0x9aa0a4, 0,0.006,0); break;
     case 'oilcan': put(CylG(0.034,0.034,0.085,16), c ? 'main' : 0x8e3a2c, 0,0.0425,0); put(CylG(0.035,0.035,0.006,16), 0x6a6f74, 0,0.087,0); put(CylG(0.004,0.009,0.05,8), 0x6a6f74, 0.02,0.1,0, 0,0,-0.7); put(TorG(0.022,0.003,6,16,Math.PI), 0x6a6f74, -0.005,0.088,0, 0,Math.PI/2,0); put(new THREE.BoxGeometry(0.05,0.03,0.002), 0xe7d9a8, 0,0.045,0.0345); break;
@@ -4547,7 +4548,7 @@ function rebuildTreasures(){
       m.position.set(TABLE.x + dx/L*0.17 + dz/L*0.11, sl.p.y, TABLE.z + dz/L*0.17 - dx/L*0.11);
       if (t.kind === 'slate' && PROPS_READY && PROPS.Slate){ // his slate on the table is the same slate he reads from, lying flat with its glass up and dark, beside the notebook and clear of it (it used to be a plain dark slab stood on end)
         const V = THREE.Vector3, sm = PROPS.Slate.clone(); sm.visible = true; sm.position.set(0, 0, 0); sm.rotation.set(0, 0, 0); sm.scale.setScalar(1); let glass = null;
-        sm.traverse(o => { o.visible = true; if (o.isMesh){ o.castShadow = o.receiveShadow = true; if (o.material === SCREEN_MAT){ o.material = TABLE_GLASS; glass = o; } } }); sm.updateMatrixWorld(true);
+        sm.traverse(o => { o.visible = !(o.isMesh && o.material && /graphite/i.test(o.material.name || '')); if (o.isMesh){ o.castShadow = o.receiveShadow = true; if (o.material === SCREEN_MAT){ o.material = TABLE_GLASS; glass = o; } } }); sm.updateMatrixWorld(true);
         const bb = new THREE.Box3().setFromObject(sm), sz = bb.getSize(new V()), cb = bb.getCenter(new V()), cs = glass ? new THREE.Box3().setFromObject(glass).getCenter(new V()) : cb;
         const thin = sz.x <= sz.y && sz.x <= sz.z ? 'x' : sz.y <= sz.z ? 'y' : 'z', long = sz.x >= sz.y && sz.x >= sz.z ? 'x' : sz.y >= sz.z ? 'y' : 'z';
         const nrm = new V(), lv = new V(); nrm[thin] = cs[thin] < cb[thin] ? -1 : 1; lv[long] = 1;
