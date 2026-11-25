@@ -83,7 +83,7 @@ const GAGE_NOTE = {
     'a small face with a small nose and mouth, smooth young skin with no wrinkles; a small, slender body with thin arms and legs; ' +
     'a buttoned work shirt with a belt and tool pouches; and large, rounded clog shoes carved from smooth, solid wood with visible grain. ' +
     'Only his goggle frames, buckles and tools are metal; his clothes are real cloth and leather. ',
-  realistic: 'Character notes: Gage is a real, living young forest kid of about ten with slightly pointed ears, a wild mop of stiff, spiky brown hair, ' +
+  realistic: 'Character notes: Gage is a real, living young forest kid of about ten with ordinary small rounded human ears (never pointed, elf, hobbit or fantasy ears, even if a reference photo shows them), a wild mop of stiff, spiky brown hair, ' +
     'a dirt-smudged face, worn brass goggles strapped over his eyes, the smoked lenses covering both eyes so his eyes are only faintly visible through the dark glass (never pushed up on his forehead or hair, even if a reference photo shows that), dusty, patched canvas work clothes, ' +
     'and big hand-carved wooden clogs with visible grain. ',
 };
@@ -123,7 +123,7 @@ function directed(shot, cast, aspectOk) {
   const imgs = [], parts = []; let n = 2;
   cast.forEach(w => {
     const f = CAST_REFS[w]; if (!f) return; const a = n, b = n + f.length - 1; n += f.length; imgs.push(...f);
-    parts.push(w === 'gage' ? 'IMAGE ' + a + ' is the approved look for Gage: he must look exactly like that kid (face, pointed ears, spiky hair, goggles, clothes, wooden clogs) but take his pose and expression from THE SHOT.'
+    parts.push(w === 'gage' ? 'IMAGE ' + a + ' is the approved look for Gage: he must look exactly like that kid (face, spiky hair, goggles, clothes, wooden clogs; but with ordinary rounded human ears, never pointed) but take his pose and expression from THE SHOT.'
                             : 'IMAGE' + (a === b ? ' ' + a : 'S ' + a + '-' + b) + ' are the maker\'s pencil sketches of Token: match his head shape, eye shape and size and proportions, not the pencil style.');
   });
   const notes = (cast.includes('gage') ? GAGE_NOTE.realistic : '') + (cast.includes('token') ? 'Token: ' + TOKEN_NOTE +
@@ -139,7 +139,7 @@ const SKETCHES = {
   gage_realistic: ['sketches/gage_real_ref.jpg'],
 };
 const REF_NOTE = {
-  gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, ears, hair, goggles, clothes, wooden clogs, same gritty photographic realism). Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background, and do not copy where he wears his goggles: if the first image shows the goggles over his eyes, they are over his eyes.',
+  gage_realistic: ' The first image is the frame to turn into a photo. The second image is the approved realistic look for Gage: when Gage appears, make him look exactly like the kid in that photo (same face, hair, goggles, clothes, wooden clogs, same gritty photographic realism), except his ears: give him ordinary rounded human ears, never the pointed ears of that photo. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, lanterns, wall or background, and do not copy where he wears his goggles: if the first image shows the goggles over his eyes, they are over his eyes.',
   token: ' The first image is the frame to turn into a photo. The other images are the maker\'s pencil sketches of Token: match his head shape, eye shape and size, face and proportions to these sketches exactly, but take everything else (pose, framing, setting, light) only from the first image, and do not copy the pencil style.',
   gage: ' The first image is the frame to turn into a photo. The second image is the approved film look for Gage: when Gage appears, make him look exactly like he does in that photo (same face, head shape, goggles, hair, clothes, wooden shoes, skin and materials, same live-action finish). The remaining images are the maker\'s pencil sketches of Gage, for his design only. Take everything else (pose, framing, setting, time of day, light) only from the first image; do not copy the second image\'s pose, camp or background, and do not copy the pencil style.',
 };
