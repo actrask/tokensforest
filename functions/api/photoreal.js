@@ -44,19 +44,20 @@ const PROMPT =
   'If the frame is bright, hazy and backlit, the photo is bright, hazy and backlit, with the same glowing atmosphere and volumetric beams; ' +
   'if it is dark, it stays dark. By day, never darken it, never close the canopy over open sky, never trade its light for a generic moody forest look. ' +
   'At night or indoors, the light comes only from the lanterns, candles and fires in the frame. ' +
-  'NIGHT IS DARK, AND THE MOON IS ONLY A RIM. The game draws night brighter and flatter than a real night so the player can see; do not copy that overall brightness. ' +
-  'At night moonlight never fills anything: it shows only as a thin, cool, silver-blue edge along one side of each tree trunk, along the top edges of canvas, poles and rocks, ' +
-  'and as a fine rim on a character. The faces of the trunks, the ground between them and everything beyond the reach of the fire or lantern fall away to near black, ' +
-  'with no ambient or sky fill, no glowing mist and no evenly lit background forest; distant trees are read only by their rim and by darker shapes against a slightly less dark sky. ' +
-  'Firelight and lantern light fall off quickly with distance, a warm pool around the flame and then darkness. The picture is high contrast and dramatic, lit like a night exterior in a feature film: ' +
-  'deep true blacks, a warm key from the fire, a cool rim from the moon, and nothing in between. ' +
+  'NIGHT IS DARK. The game draws night brighter and flatter than a real night so the player can see; do not copy that overall brightness, and do not light the background. ' +
+  'At night there are exactly two kinds of light. First, the warm pool from each fire or lantern in the frame, which falls off quickly: bright near the flame, dim a few steps away, then gone. ' +
+  'Second, a faint cool silver-blue RIM from an unseen source high behind the scene: a thin edge line along one side of each tree trunk, along the top edges of canvas, poles, rocks and furniture, ' +
+  'and a fine outline on a character. The rim is an edge only; it never spreads across a surface and never fills. ' +
+  'Everything else is unlit: the faces of the trunks, the bushes, ferns and foliage behind the camp, and the ground beyond the firelight are near-black silhouettes with no visible leaf detail, ' +
+  'no ambient fill, no sky glow, no mist and no light beams. Never show the moon, stars, a bright sky or shafts of light unless they are plainly visible in the frame; the night sky is a plain, very dark blue-black. ' +
+  'The result is high contrast and dramatic, like a night exterior in a feature film: deep true blacks, a warm key from the fire, a thin cool rim, and darkness in between. ' +
   'THE HERO IS LIT LIKE A HERO: the main character is the star of this shot and is lit the way a film crew lights its lead, with the scene\'s sun as the key. ' +
   'When the sun is behind or beside him, give him a hot, bright, golden edge light: a crisp glowing rim that clearly outlines his whole silhouette, ' +
   'the hair blazing with light, a bright line along his ears, cheek, neck, shoulders, back, arms, hands and shoes, light catching the goggle rims, ' +
   'strong enough to be the brightest edge in the frame and to pop him off the background. Fill his face and front with warm bounce light from the sunlit ground ' +
   'so his expression and clothes read clearly. Never dark, murky, flat or filled in, never a silhouette; he is the most clearly lit, most readable thing in the shot. Being the star changes only his light, never his size, position or distance: he stays exactly as big and exactly where he is in the frame. ' +
   'Warmth (by day): the whole image feels warm, the golden, honey-colored warmth of sunlight in a forest: warm highlights, warm haze, warm skin, golden light on wood and water, ' +
-  'with only gentle cool tones in the deepest shadows. Never cold, gray, blue or desaturated. At night the warmth lives only in the fire and lantern light; the rest is dark with a cool moon rim. ' +
+  'with only gentle cool tones in the deepest shadows. Never cold, gray, blue or desaturated. At night the warmth lives only in the fire and lantern light; the rest is dark with a thin cool rim. ' +
   'Texture: everything tangible, imperfect and lived-in: weathered wood, worn canvas, real towering redwood bark, dark soil with needles and debris. ' +
   'Blankets and bedding are dense, thick wool. ' +
   'Color: the frame\'s own palette pushed warm, as real film color, true exposure, fine film grain. Never oversaturated, glossy, HDR, cute or storybook. ' +
