@@ -93,6 +93,6 @@
   function addBtn(){ var bs = document.getElementById('btns'); if (!bs || document.getElementById('pntBtn')) return !!bs;
     var b = document.createElement('button'); b.className = 'btn light'; b.id = 'pntBtn'; b.textContent = 'His paintings';
     var after = document.getElementById('phoBtn'); bs.insertBefore(b, after ? after.nextSibling : null); b.onclick = open; return true; }
-  var tries = 0, iv = setInterval(function(){ tries++; if (addBtn() || tries > 60){ if (tries > 60) clearInterval(iv); } var b = document.getElementById('pntBtn'); if (b) b.style.display = who() === 'token' ? '' : 'none'; }, 1000);
+  var tries = 0, iv = setInterval(function(){ tries++; if (addBtn() || tries > 60){ if (tries > 60) clearInterval(iv); } var b = document.getElementById('pntBtn'), ph = document.getElementById('phoBtn'); if (b && ph && ph.nextSibling !== b) ph.parentNode.insertBefore(b, ph.nextSibling);   /* keep it right under "His pictures" (that button is added late) */ if (b) b.style.display = who() === 'token' ? '' : 'none'; }, 1000);
   window.__paintDraw = draw; window.__paintCollect = collect;
 })();
