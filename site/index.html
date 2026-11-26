@@ -4002,10 +4002,10 @@ function loadChar(id, b64, names){
       const cen = b.getCenter(new THREE.Vector3()); const a = new THREE.Object3D(); a.position.set(cen.x, b.min.y + 0.025, cen.z); arm.add(a); return a; };
     if (P.ForeL || P.ArmL) CH[id].hold = {anchor:handOf(P.ForeL || P.ArmL), kind:'', mesh:null};
     if (P.ForeR) CH[id].handR = handOf(P.ForeR);
-    if (id === 'gage' && P.ForeL){   /* his wristwatch, worn on the left wrist from the moment he takes it from the stump (and not before, when an earlier day is replayed): a brushed titanium bracelet, a polished steel case with a crown, a blue dial */
+    if (id === 'gage' && P.ForeL){   /* his wristwatch, worn on the left wrist from the moment he takes it from the stump (and not before, when an earlier day is replayed): a stainless steel bracelet, a polished steel case with a crown, a blue dial */
       const W = new THREE.Group(); W.name = 'ToolWatch'; W.position.set(0.0105, -0.075, 0.019); W.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0.016, -0.13, 0.046).normalize());   // around the forearm, which runs down and a little forward to the hand
       const mk = (geo, col, x = 0, rz = 0) => { const m = new THREE.Mesh(geo, TM(col)); m.name = 'ToolWatch'; m.position.x = x; m.rotation.z = rz; m.castShadow = true; W.add(m); return m; };
-      mk(CylG(0.0162, 0.0162, 0.0105, 24), 0x8b8f96);
+      mk(CylG(0.0162, 0.0162, 0.0105, 24), 0xc2c7cc);
       mk(CylG(0.0118, 0.0118, 0.006, 26), 0xd3d7da, 0.0172, Math.PI/2); mk(CylG(0.0097, 0.0097, 0.0064, 26), 0x2c66cc, 0.0174, Math.PI/2);
       const cr = mk(CylG(0.002, 0.002, 0.004, 8), 0xd3d7da, 0.0172); cr.position.y = -0.0135;
       W.visible = false; P.ForeL.add(W); CH[id].watch = W;
@@ -4506,8 +4506,8 @@ function makeTreasure(kind, color){
     case 'note': put(new THREE.BoxGeometry(0.1,0.002,0.07), c ? 'main' : 0xf3eee2, -0.022,0.025,0, 0,0,0.9); put(new THREE.BoxGeometry(0.1,0.002,0.07), c ? 'main' : 0xece4d2, 0.022,0.025,0, 0,0,-0.9); break;
     case 'leaf': put(SphG(0.05,10,6), c ? 'main' : 0xc8662e, 0,0.005,0, 0,0.6,0, 1,0.06,0.55); break;
     case 'mushroom': put(CylG(0.01,0.014,0.06,8), 0xeee4cf, 0,0.03,0); put(SphG(0.035,12,6,0,6.3,0,1.6), c ? 'main' : 0xc0644a, 0,0.055,0, 0,0,0, 1,0.7,1); break;
-    case 'watch': { // a wristwatch standing on its closed bracelet: a brushed gray titanium band, a polished steel case with a crown, and a deep blue dial under the glass
-      put(TorG(0.026, 0.0045, 8, 28), 0x8b8f96, 0, 0.03, 0, 0, 0, 0, 1, 1, 2.6);
+    case 'watch': { // a wristwatch standing on its closed bracelet: a stainless steel band, a polished steel case with a crown, and a deep blue dial under the glass
+      put(TorG(0.026, 0.0045, 8, 28), 0xc2c7cc, 0, 0.03, 0, 0, 0, 0, 1, 1, 2.6);
       put(CylG(0.0205, 0.0205, 0.009, 28), 0xd3d7da, 0, 0.0595, 0); put(CylG(0.0165, 0.0165, 0.0096, 28), c ? 'main' : 0x2c66cc, 0, 0.0597, 0);
       put(new THREE.BoxGeometry(0.003, 0.0008, 0.0008), 0xe9edf0, 0.0105, 0.0647, 0); put(new THREE.BoxGeometry(0.0008, 0.0008, 0.011), 0xe9edf0, 0, 0.0647, -0.0045);
       put(CylG(0.003, 0.003, 0.005, 10), 0xd3d7da, 0.0225, 0.0595, 0, 0, 0, Math.PI/2); break; }

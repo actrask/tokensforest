@@ -92,7 +92,7 @@ const GAGE_ATTITUDE =
   'His hair keeps its few large, sharp, stiff spikes; his buttoned leather vest and work shirt are intact, just lived-in: sleeves shoved up, a smudge of grease on one cheek and on his fingers, scuffed clogs. Not ragged, torn or filthy. ' +
   'He looks at his work or off to the side, thinking, never at the camera. Keep his place and overall pose from the frame; the attitude lives in his face, hands and bearing. ' +
   'HIS WATCH: when the frame shows a band with a round case on Gage\'s left wrist, that is his wristwatch and it must be in the picture, on that same wrist: a well-kept vintage 1980s steel dress watch ' +
-  'with a deep blue sunburst dial, slim baton hour markers, a small date window at three o\'clock, a fluted polished bezel and a domed crystal, on a brushed gray titanium link bracelet. ' +
+  'with a deep blue sunburst dial, slim baton hour markers, a small date window at three o\'clock, a smooth polished bezel and a domed crystal with a small magnifying lens over the date, on a stainless steel three-link bracelet, brushed with polished edges, the same silver steel as the case. ' +
   'It is a fine, expensive object on a scruffy kid, and he wears it without fuss; render it with real metal and glass, the right small size for his wrist, catching the light, with no readable brand name or logo. ' +
   'When no watch shows on his wrist in the frame, he wears none. ';
 const GAGE_NOTE = {
