@@ -10,7 +10,8 @@
   if (/(^|[#&])dev\b/.test(location.hash)) mode = 'dev'; if (/(^|[#&])present\b/.test(location.hash)) mode = 'present';
 
   var css = document.createElement('style'); css.textContent = [
-    'body.present>*:not(#gl):not(#prShade):not(#cutHold):not(#cutBlack):not(.bars):not(#pres):not(#presKB):not(#presCap):not(#presTog):not(#presStop):not(#presCam):not(#camOvC):not(script):not(style){visibility:hidden!important}',
+    'body.present>*:not(#gl):not(#prShade):not(#cutHold):not(#cutBlack):not(.bars):not(#pres):not(#presKB):not(#presCap):not(#presTog):not(#presStop):not(#presCam):not(#camOvC):not(#readCard):not(script):not(style){visibility:hidden!important}',
+    'body.present #readCard{z-index:60}',   // his paintings and pictures open over the title card
     '#pres{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(10,12,10,.35),rgba(6,8,6,.86));color:#f4ead2;font-family:Georgia,"Iowan Old Style",serif;opacity:0;transition:opacity 1.2s}',
     'body.present #pres.show{display:flex} #pres.vis{opacity:1}',
     '#pres .in{max-width:640px;padding:28px 26px;text-align:center}',
@@ -65,8 +66,14 @@
       '<p class="st">Two small creatures live in this forest, and nobody is steering them. Every hour each one wakes, decides what to do, and does it: fishing the creek, building, whittling, looking things up on a slate.</p>' +
       '<p class="st">Token was here first. Gage keeps his own camp across the water. Each night a narrator tells the story of their day.</p>' +
       '<div class="row">' + btn(t, 'token') + btn(g, 'gage') + '</div>' +
+      '<div class="more"><a data-a="paint">Token’s paintings</a>·<a data-a="pho-token">Token’s pictures</a>·<a data-a="pho-gage">Gage’s pictures</a></div>' +
       '<div class="more"><a data-a="earlier">Earlier days</a>·<a data-a="dev">Explore the forest (dev view)</a></div><div class="list"></div></div>';
     pres.querySelectorAll('button.go[data-w]').forEach(function(b){ b.onclick = function(){ play(b.dataset.w, b.dataset.d); }; });
+    /* what they have made, straight from the title card: the same windows the menu opens in the dev view */
+    var openMade = function(who, id){ var f = window.__forest; try { if (f && f.who() !== who) f.setWho(who); } catch (e) {} var n = 0, t = setInterval(function(){ var bt = document.getElementById(id); if (bt && (!f || f.who() === who)){ clearInterval(t); bt.click(); } else if (++n > 40) clearInterval(t); }, 150); };
+    pres.querySelector('[data-a=paint]').onclick = function(){ openMade('token', 'pntBtn'); };
+    pres.querySelector('[data-a=pho-token]').onclick = function(){ openMade('token', 'phoBtn'); };
+    pres.querySelector('[data-a=pho-gage]').onclick = function(){ openMade('gage', 'phoBtn'); };
     pres.querySelector('[data-a=dev]').onclick = function(){ setMode('dev'); };
     pres.querySelector('[data-a=earlier]').onclick = function(){ var L = pres.querySelector('.list'); L.classList.toggle('open');
       L.innerHTML = ['token', 'gage'].map(function(w){ return READY[w].map(function(x){ return '<button data-w="' + w + '" data-d="' + x.day + '">' + NAMES[w] + ' · ' + esc(fmtDay(x.day)) + '</button>'; }).join(''); }).join('') || '<p class="st">No recorded days yet.</p>';

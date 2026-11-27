@@ -212,7 +212,7 @@
   <div id="pane"></div>
 </div>
 
-<script src="world-loader.js?v=19"></script>
+<script src="world-loader.js?v=20"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -4913,9 +4913,10 @@ function photoTick(){ const c = PHO.cur; if (!c) return; if (!RP.on || !RP.photo
   if (CH[c.who].group) CH[c.who].group.visible = false;   // the one behind the box is not in his own picture
   if (++c.n < 16) return;
   try { // the print: cropped four by three, softened, toned brown, darker toward the corners, with a little grain
-    const ch = cw*0.75, OW = 720, OH = 540, soft = p.blur ? 7 : 2.2, a = document.createElement('canvas'), b = document.createElement('canvas'); a.width = Math.round(OW/soft); a.height = Math.round(OH/soft); b.width = OW; b.height = OH;
+    const ch = cw*0.75, OW = 1600, OH = 1200, soft = p.blur ? 11 : 2.6,   /* a large print: 1600 by 1200, drawn from about 615 pixels of real detail (it was 720 by 540 from about 330), still soft the way a pinhole is */
+      a = document.createElement('canvas'), b = document.createElement('canvas'); a.width = Math.round(OW/soft); a.height = Math.round(OH/soft); b.width = OW; b.height = OH;
     const ac = a.getContext('2d'), bc = b.getContext('2d'); ac.imageSmoothingEnabled = true; ac.drawImage(cv, (cv.width - cw)/2, (cv.height - ch)/2, cw, ch, 0, 0, a.width, a.height); bc.imageSmoothingEnabled = true; bc.drawImage(a, 0, 0, OW, OH);
-    if (p.blur){ bc.globalAlpha = 0.5; bc.drawImage(a, 14, 3, OW, OH); bc.globalAlpha = 0.33; bc.drawImage(a, -12, -4, OW, OH); bc.globalAlpha = 1; }   // something moved while the shutter was open
+    if (p.blur){ bc.globalAlpha = 0.5; bc.drawImage(a, 31, 7, OW, OH); bc.globalAlpha = 0.33; bc.drawImage(a, -27, -9, OW, OH); bc.globalAlpha = 1; }   // something moved while the shutter was open
     const im = bc.getImageData(0, 0, OW, OH), d = im.data, mx = Math.hypot(OW/2, OH/2); let sd = (Date.parse(p.at)/1000) % 2147483647 | 1;
     for (let y = 0, i = 0; y < OH; y++) for (let x = 0; x < OW; x++, i += 4){ sd = (sd*48271) % 2147483647;
       let l = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2])/255; l = (l - 0.5)*1.28 + 0.53; l *= 1 - 0.78*Math.pow(Math.hypot(x - OW/2, y - OH/2)/mx, 2.7); l += (sd/2147483647 - 0.5)*0.075; l = Math.max(0, Math.min(1, l));
